@@ -789,7 +789,7 @@ namespace UnityEditor.BSplines
             SceneView.RepaintAll();
         }
 
-        [Shortcut("Splines/Cycle Active Spline", typeof(SceneView), KeyCode.S)]
+        [Shortcut("B-Splines/Cycle Active Spline", typeof(SceneView), KeyCode.S)]
         static void ShortcutCycleActiveSpline(ShortcutArguments args)
         {
             if (activeTool is KnotPlacementTool tool)

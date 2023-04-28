@@ -18,7 +18,7 @@ namespace UnityEngine.BSplines
     /// SplineInstantiate is used to automatically instantiate prefabs or objects along a spline.
     /// </summary>
     [ExecuteInEditMode]
-    [AddComponentMenu("Splines/Spline Instantiate")]
+    [AddComponentMenu("B-Splines/Spline Instantiate")]
     public class SplineInstantiate : SplineComponent
     {
         /// <summary>

@@ -7,7 +7,7 @@ namespace UnityEditor.BSplines
 {
     static class SplineMenu
     {
-        const string k_MenuPath = "GameObject/Spline";
+        const string k_MenuPath = "GameObject/B-Spline";
 
         internal static GameObject CreateSplineGameObject(MenuCommand menuCommand, Spline spline = null)
         {

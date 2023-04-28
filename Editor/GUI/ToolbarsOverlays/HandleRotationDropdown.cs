@@ -5,7 +5,7 @@ using UnityEditor.Toolbars;
 
 namespace UnityEditor.BSplines
 {
-    [EditorToolbarElement("Spline Tool Settings/Handle Rotation")]
+    [EditorToolbarElement("B-Spline Tool Settings/Handle Rotation")]
     class HandleRotationDropdown : EditorToolbarDropdown
     {
         const string k_ParentRotationIconPath = "Packages/com.unity.bsplines/Editor/Resources/Icons/ToolHandleParent.png";

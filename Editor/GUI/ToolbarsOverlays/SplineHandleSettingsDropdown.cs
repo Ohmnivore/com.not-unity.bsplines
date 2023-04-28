@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 
 namespace UnityEditor.BSplines
 {
-    [EditorToolbarElement("Spline Tool Settings/Handle Visuals")]
+    [EditorToolbarElement("B-Spline Tool Settings/Handle Visuals")]
     sealed class SplineHandleSettingsDropdown : EditorToolbarDropdown
     {
         public SplineHandleSettingsDropdown()

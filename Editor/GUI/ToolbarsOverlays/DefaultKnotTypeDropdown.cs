@@ -6,7 +6,7 @@ using UnityEngine.BSplines;
 
 namespace UnityEditor.BSplines.Editor.GUI
 {
-    [EditorToolbarElement("Spline Tool Settings/Default Knot Type")]
+    [EditorToolbarElement("B-Spline Tool Settings/Default Knot Type")]
     class DefaultKnotTypeDropdown : EditorToolbarDropdown
     {
         const string k_LinearIconPath = "Packages/com.unity.bsplines/Editor/Resources/Icons/Tangent_Linear.png";

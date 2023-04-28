@@ -197,14 +197,14 @@ namespace UnityEditor.BSplines
             }
         }
 
-        [Shortcut("Splines/Cycle Tangent Mode", typeof(SceneView), KeyCode.C)]
+        [Shortcut("B-Splines/Cycle Tangent Mode", typeof(SceneView), KeyCode.C)]
         static void ShortcutCycleTangentMode(ShortcutArguments args)
         {
             if (activeTool != null)
                 CycleTangentMode();
         }
 
-        [Shortcut("Splines/Toggle Manipulation Space", typeof(SceneView), KeyCode.X)]
+        [Shortcut("B-Splines/Toggle Manipulation Space", typeof(SceneView), KeyCode.X)]
         static void ShortcutCycleHandleOrientation(ShortcutArguments args)
         {
             /* We're doing a switch here (instead of handleOrientation+1 and wrapping) because HandleOrientation.Global/Local values map

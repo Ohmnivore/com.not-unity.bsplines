@@ -11,7 +11,7 @@ namespace UnityEngine.BSplines
     /// <summary>
     /// A component to animate an object along a spline.
     /// </summary>
-    [AddComponentMenu("Splines/Spline Animate")]
+    [AddComponentMenu("B-Splines/Spline Animate")]
     public class SplineAnimate : SplineComponent
     {
         /// <summary>

@@ -11,7 +11,7 @@ namespace UnityEngine.BSplines
 #if UNITY_2021_2_OR_NEWER
     [Icon(k_IconPath)]
 #endif
-    [AddComponentMenu("Splines/Spline")]
+    [AddComponentMenu("B-Splines/Spline")]
     [ExecuteInEditMode]
     public sealed class SplineContainer : MonoBehaviour, ISplineContainer, ISerializationCallbackReceiver
     {

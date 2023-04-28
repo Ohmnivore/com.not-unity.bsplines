@@ -322,7 +322,7 @@ namespace UnityEngine.BSplines
         public void Warmup();
     }
 
-    [AddComponentMenu(@"Splines/Spline Animate")] public class SplineAnimate : SplineComponent
+    [AddComponentMenu(@"B-Splines/Spline Animate")] public class SplineAnimate : SplineComponent
     {
         [System.Obsolete(@"Use Updated instead.", false)] public event System.Action<Vector3, Quaternion> onUpdated;
         public event System.Action<Vector3, Quaternion> Updated;
@@ -412,7 +412,7 @@ namespace UnityEngine.BSplines
         public void Upload();
     }
 
-    [AddComponentMenu(@"Splines/Spline")] [ExecuteInEditMode] [Icon(@"Packages/com.unity.bsplines/Editor/Resources/Icons/SplineComponent.png")] public sealed class SplineContainer : MonoBehaviour, ISerializationCallbackReceiver, ISplineContainer
+    [AddComponentMenu(@"B-Splines/Spline")] [ExecuteInEditMode] [Icon(@"Packages/com.unity.bsplines/Editor/Resources/Icons/SplineComponent.png")] public sealed class SplineContainer : MonoBehaviour, ISerializationCallbackReceiver, ISplineContainer
     {
         public static event System.Action<SplineContainer, int> SplineAdded;
         public static event System.Action<SplineContainer, int> SplineRemoved;
@@ -477,7 +477,7 @@ namespace UnityEngine.BSplines
         protected SplineDataHandleAttribute() {}
     }
 
-    [AddComponentMenu(@"Splines/Spline Extrude")] [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))] public class SplineExtrude : MonoBehaviour
+    [AddComponentMenu(@"B-Splines/Spline Extrude")] [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))] public class SplineExtrude : MonoBehaviour
     {
         [System.Obsolete(@"Use Capped instead.", false)] public bool capped { get; }
         public bool Capped { get; set; }
@@ -538,7 +538,7 @@ namespace UnityEngine.BSplines
         public void OnBeforeSerialize();
     }
 
-    [AddComponentMenu(@"Splines/Spline Instantiate")] [ExecuteInEditMode] public class SplineInstantiate : SplineComponent
+    [AddComponentMenu(@"B-Splines/Spline Instantiate")] [ExecuteInEditMode] public class SplineInstantiate : SplineComponent
     {
         [System.Obsolete(@"Use Container instead.", false)] public SplineContainer container { get; }
         public SplineContainer Container { get; set; }
