@@ -107,7 +107,7 @@ namespace UnityEditor.Splines
         public void Do(int controlID, T spline, float size, UnityEngine.Color color, int resolution = 10);
     }
 
-    [UnityEditor.EditorTools.EditorToolContext(@"Spline", typeof(UnityEngine.Splines.ISplineContainer))] [UnityEngine.Icon(@"Packages/com.unity.splines/Editor/Resources/Icons/SplineContext.png")] public sealed class SplineToolContext : UnityEditor.EditorTools.EditorToolContext
+    [UnityEditor.EditorTools.EditorToolContext(@"Spline", typeof(UnityEngine.Splines.ISplineContainer))] [UnityEngine.Icon(@"Packages/com.unity.bsplines/Editor/Resources/Icons/SplineContext.png")] public sealed class SplineToolContext : UnityEditor.EditorTools.EditorToolContext
     {
         public SplineToolContext() {}
         protected override System.Type GetEditorToolType(Tool tool);

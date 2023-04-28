@@ -412,7 +412,7 @@ namespace UnityEngine.Splines
         public void Upload();
     }
 
-    [AddComponentMenu(@"Splines/Spline")] [ExecuteInEditMode] [Icon(@"Packages/com.unity.splines/Editor/Resources/Icons/SplineComponent.png")] public sealed class SplineContainer : MonoBehaviour, ISerializationCallbackReceiver, ISplineContainer
+    [AddComponentMenu(@"Splines/Spline")] [ExecuteInEditMode] [Icon(@"Packages/com.unity.bsplines/Editor/Resources/Icons/SplineComponent.png")] public sealed class SplineContainer : MonoBehaviour, ISerializationCallbackReceiver, ISplineContainer
     {
         public static event System.Action<SplineContainer, int> SplineAdded;
         public static event System.Action<SplineContainer, int> SplineRemoved;
