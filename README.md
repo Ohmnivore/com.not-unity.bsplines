@@ -1,27 +1,27 @@
 # About
+Based on [`com.unity.splines`](https://docs.unity3d.com/Packages/com.unity.splines@2.2/manual/index.html) version 2.2.1.
 
-This package contains a framework and tools for working with curves and splines.
+The original package provides linear, cubic Bézier, and Catmull-Rom splines. They are not [C^2-continuous](https://www.youtube.com/watch?v=jvPPXbo87ds).
 
-## Quick Start
+This fork provides the uniform cubic B-Splines (with 4 control points per curve).
 
-Splines are defined as implementing the `ISpline` interface. There are two default implementations, a mutable `Spline` class, and an immutable `NativeSpline`.
+# Installation
+* Install the package [from its git URL](https://docs.unity3d.com/Manual/upm-ui-giturl.html) or [from a local copy](https://docs.unity3d.com/Manual/upm-ui-local.html).
+* It does not depend on the `com.unity.splines` package and will not conflict with it if it's present
 
-Splines are represented in the scene using the `SplineContainer` MonoBehaviour. Multiple splines can be stored in a single container.
+# Possible Improvements
+* [Global curve interpolation](https://pages.mtu.edu/~shene/COURSES/cs3621/NOTES/INT-APP/CURVE-INT-global.html)
+* Automatic conversion between cubic Bézier and cubic B-Splines
+* Shared interfaces with `com.unity.splines`, less duplicated code
+* Shader utility functions have not been reimplemented for B-Splines
+* Automated tests have not been reimplemented for B-Splines
+* Arbitrary degree and number of control points per curve? (https://xiaoxingchen.github.io/2020/03/02/bspline_in_so3/general_matrix_representation_for_bsplines.pdf)
 
-Use `SplineUtility` to extract information from `ISpline` objects (ex, get a position at some interpolation).
+# Implementation Details
+The B-Splines are [clamped](https://pages.mtu.edu/%7Eshene/COURSES/cs3621/NOTES/spline/bspline-curve-prop.html) to guarantee that they pass through the first and last points.
 
-Use `Splines.cginc` to import curve data data types and HLSL functions for working with Splines.
+The splines are calculated internally using their matrix forms. The multiplication of the control point vector by the basis function matrix is cached for every point, so that evaluation at any given point only entails a vector dot product.
 
-## Creating a Spline
+Derivatives are analytical and re-use the same cached multiplication. Derivatives need only be applied to the parameter vector `[1, t, t^2, t^3]`. This vector becomes `[0, 1, 2t, 3t^2]` for the tangent and `[0, 0, 2, 6t]` for the acceleration.
 
-The default method of creating a Spline is the draw spline tool, which is accessed through the menu `GameObject/Spline/Draw Splines Tool`. This instantiates a new `SplineContainer` in the active scene, and enters the tool. 
-
-With the **Draw Splines** tool active, add points to the spline by clicking in the Scene View. Press the `Enter/Return` to end the point placement on the current spline and add points to a new spline of the same container. Press the `Escape` key to finish placing points.
-
-To edit a Spline, open the Spline Tool Context by selecting a `SplineContainer` and toggling the Tool Context (in the Scene View Tools Toolbar) to **Spline**. Then, use the Move, Rotate, Scale tools to modify spline knots and tangents.
-
-## Extending Splines
-
-Splines can be extended through inheritance, or with `SplineData<T>`. The `SplineData` class is a key value pair collection type where key corresponds to an interpolation value relative to a spline. See the API documentation for more information on working with `SplineData`.
-
-Import the **Spline Examples** scripts and scenes from the Package Manager Samples page.
+The quadratic B-Spline was not implemented. It may look enticing by having one less control point, especially in 2D contexts, but it isn't C^2-continuous. Only the first `degree - 1` derivatives of B-Splines are continuous.
