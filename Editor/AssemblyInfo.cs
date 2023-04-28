@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Unity.Splines.Editor.Tests")]
-[assembly: InternalsVisibleTo("Unity.Splines.Editor.Tests")]
-[assembly: InternalsVisibleTo("Unity.Splines.Editor.Debug")]
+[assembly: InternalsVisibleTo("Unity.BSplines.Editor.Tests")]
+[assembly: InternalsVisibleTo("Unity.BSplines.Editor.Tests")]
+[assembly: InternalsVisibleTo("Unity.BSplines.Editor.Debug")]
