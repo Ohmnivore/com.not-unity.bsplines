@@ -1,8 +1,8 @@
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     [CustomEditor(typeof(SplineExtrude))]
     [CanEditMultipleObjects]

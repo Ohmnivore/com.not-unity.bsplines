@@ -1,4 +1,4 @@
-namespace UnityEngine.Splines
+namespace UnityEngine.BSplines
 {
     /// <summary>
     /// Describes a type of data stored by a <see cref="SplineData{T}"/> collection embedded in <see cref="Spline"/>.

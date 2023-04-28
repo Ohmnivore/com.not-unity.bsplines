@@ -5,10 +5,10 @@ using System.Linq;
 using Unity.Mathematics;
 using UnityEditor.EditorTools;
 using UnityEditor.SettingsManagement;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 using Object = UnityEngine.Object;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     struct SplineCurveHit
     {

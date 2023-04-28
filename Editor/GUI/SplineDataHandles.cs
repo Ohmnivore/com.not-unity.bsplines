@@ -2,9 +2,9 @@
 using System.Linq;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     /// <summary>
     /// Provides default handles to SplineData.

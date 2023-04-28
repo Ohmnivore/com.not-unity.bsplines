@@ -1,4 +1,4 @@
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     sealed class CommonElementDrawer : ElementDrawer<ISplineElement>
     {

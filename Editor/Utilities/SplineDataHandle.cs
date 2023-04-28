@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     [Obsolete("Use SplineDataHandles.DataPointHandles instead and EditorTools to interact with SplineData.", false)]
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]

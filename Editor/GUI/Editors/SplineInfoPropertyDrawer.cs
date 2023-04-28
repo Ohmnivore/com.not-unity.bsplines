@@ -1,7 +1,7 @@
 using UnityEngine;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     /// <summary>
     /// Create a property drawer for <see cref="SplineInfo"/> types.

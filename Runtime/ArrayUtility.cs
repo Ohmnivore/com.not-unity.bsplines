@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace UnityEngine.Splines
+namespace UnityEngine.BSplines
 {
     static class ArrayUtility 
     {

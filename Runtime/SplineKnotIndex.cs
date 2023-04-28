@@ -1,6 +1,6 @@
 using System;
 
-namespace UnityEngine.Splines
+namespace UnityEngine.BSplines
 {
     /// <summary>
     /// Provides a tuple to define a couple (Spline index, Knot index) that identifies a particular knot on a spline.

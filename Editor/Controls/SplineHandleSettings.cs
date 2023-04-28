@@ -1,9 +1,9 @@
 using System;
 using UnityEngine;
 using UnityEditor.SettingsManagement;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     static class SplineHandleSettings
     {

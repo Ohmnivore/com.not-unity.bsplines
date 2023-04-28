@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 using UnityEngine.UIElements;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     sealed class BezierTangentPropertyField<T> : DropdownField
         where T : ISplineElement

@@ -4,9 +4,9 @@ using UnityEditor.EditorTools;
 using UnityEditor.Overlays;
 using UnityEngine;
 using UnityEngine.UIElements;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     [Icon("UnityEditor.InspectorWindow")]
     [Overlay(typeof(SceneView), "unity-spline-inspector", "Element Inspector", "SplineInspector")]

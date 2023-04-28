@@ -1,7 +1,7 @@
 using UnityEngine;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     /// <summary>
     /// A PropertyDrawer used to show a popup menu with available spline indices relative to a <see cref="ISplineContainer"/>.

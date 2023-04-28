@@ -1,8 +1,8 @@
 using System.Linq;
 using UnityEditor;
-using UnityEditor.Splines;
+using UnityEditor.BSplines;
 using UnityEngine;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 
 class SplineInstantiateGizmoDrawer
 {

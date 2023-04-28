@@ -2,11 +2,11 @@ using System;
 using UnityEditor.SettingsManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 using Unity.Mathematics;
 using Object = UnityEngine.Object;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     struct ColorScope : IDisposable
     {

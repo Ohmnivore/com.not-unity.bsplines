@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor.Toolbars;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     [EditorToolbarElement("Spline Tool Settings/Handle Rotation")]
     class HandleRotationDropdown : EditorToolbarDropdown

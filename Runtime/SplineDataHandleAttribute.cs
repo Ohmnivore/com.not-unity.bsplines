@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace UnityEngine.Splines
+namespace UnityEngine.BSplines
 {
     /// <summary>
     /// SplineDataHandleAttribute can be use to add custom handles to <see cref="SplineData{T}"/>.

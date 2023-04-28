@@ -5,7 +5,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
-namespace UnityEngine.Splines
+namespace UnityEngine.BSplines
 {
     /// <summary>
     /// Provides methods to calculate, in parallel, the positions along <see cref="NativeSpline"/>.

@@ -1,7 +1,7 @@
 using System;
 using Unity.Collections;
 
-namespace UnityEngine.Splines
+namespace UnityEngine.BSplines
 {
     /// <summary>
     /// SplineComputeBufferScope is a convenient way to extract from a spline the information necessary to evaluate

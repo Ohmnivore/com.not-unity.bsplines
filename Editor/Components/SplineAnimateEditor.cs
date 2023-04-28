@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     [CustomEditor(typeof(SplineAnimate))]
     [CanEditMultipleObjects]

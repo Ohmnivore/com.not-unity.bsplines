@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEditor.EditorTools;
 using UnityEditor.Overlays;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     [CustomEditor(typeof(SplineRotateTool))]
     class SplineRotateToolSettings : SplineToolSettings { }

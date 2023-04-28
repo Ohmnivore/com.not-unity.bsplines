@@ -5,7 +5,7 @@ using UnityEditor.EditorTools;
 using UnityEngine;
 using UnityEditor.SettingsManagement;
 using UnityEditor.ShortcutManagement;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 #if UNITY_2022_1_OR_NEWER
 using UnityEditor.Overlays;
 #else
@@ -14,7 +14,7 @@ using UnityEditor.Toolbars;
 using UnityEngine.UIElements;
 #endif
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     /// <summary>
     /// Describes how the handles are oriented.

@@ -1,7 +1,7 @@
 using System;
 using Unity.Mathematics;
 
-namespace UnityEngine.Splines
+namespace UnityEngine.BSplines
 {
     /// <summary>
     /// SplineInfo is used to wrap a reference to the <see cref="SplineContainer"/> and index within that container to

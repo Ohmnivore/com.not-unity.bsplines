@@ -1,6 +1,6 @@
 using System;
 
-namespace UnityEngine.Splines
+namespace UnityEngine.BSplines
 {
     /// <summary>
     /// Describes the different supported Spline representations.

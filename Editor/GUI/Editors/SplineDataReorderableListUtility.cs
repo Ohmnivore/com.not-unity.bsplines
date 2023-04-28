@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEditorInternal;
 using UnityEngine;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     [InitializeOnLoad]
     static class SplineDataReorderableListUtility

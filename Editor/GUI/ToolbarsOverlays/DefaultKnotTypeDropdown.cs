@@ -1,10 +1,10 @@
 ﻿using UnityEditor.Toolbars;
 using UnityEngine;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 #if !UNITY_2022_1_OR_NEWER
 #endif
 
-namespace UnityEditor.Splines.Editor.GUI
+namespace UnityEditor.BSplines.Editor.GUI
 {
     [EditorToolbarElement("Spline Tool Settings/Default Knot Type")]
     class DefaultKnotTypeDropdown : EditorToolbarDropdown

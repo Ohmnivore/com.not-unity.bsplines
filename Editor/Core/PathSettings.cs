@@ -1,7 +1,7 @@
 ﻿using UnityEditor.SettingsManagement;
 using UnityEngine;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     sealed class PathSettings
     {

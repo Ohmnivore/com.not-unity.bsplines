@@ -1,8 +1,8 @@
 using System;
 using Unity.Mathematics;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     interface ISplineElement : IEquatable<ISplineElement>
     {

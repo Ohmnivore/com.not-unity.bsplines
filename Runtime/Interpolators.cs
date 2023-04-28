@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-namespace UnityEngine.Splines.Interpolators
+namespace UnityEngine.BSplines.Interpolators
 {
     /// <summary>
     /// Linearly interpolate between two values a and b by ratio t. 

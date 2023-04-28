@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using Unity.Mathematics;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 using UnityEngine.UIElements;
 
 #if !UNITY_2022_1_OR_NEWER
 using UnityEditor.UIElements;
 #endif
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     sealed class TangentDrawer : ElementDrawer<SelectableTangent>
     {

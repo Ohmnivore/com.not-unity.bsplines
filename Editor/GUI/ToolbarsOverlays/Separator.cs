@@ -1,6 +1,6 @@
 using UnityEngine.UIElements;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     sealed class Separator : VisualElement
     {

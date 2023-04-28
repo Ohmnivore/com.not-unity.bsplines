@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-namespace UnityEngine.Splines
+namespace UnityEngine.BSplines
 {
     /// <summary>
     /// Assorted utility functions for math equations commonly used when working with Splines.

@@ -1,9 +1,9 @@
 using Unity.Mathematics;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 using UnityEngine;
 using UnityEditor.EditorTools;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     static class SplineMenu
     {

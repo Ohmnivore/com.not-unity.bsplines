@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Mathematics;
 
-namespace UnityEngine.Splines
+namespace UnityEngine.BSplines
 {
     /// <summary>
     /// To calculate a value at some distance along a spline, interpolation is required. The IInterpolator interface
@@ -129,7 +129,7 @@ namespace UnityEngine.Splines
         /// </summary>
         /// <remarks>
         /// In the editor this can be invoked many times per-frame.
-        /// Prefer to use <see cref="UnityEditor.Splines.EditorSplineUtility.RegisterSplineDataChanged"/> when working with
+        /// Prefer to use <see cref="UnityEditor.BSplines.EditorSplineUtility.RegisterSplineDataChanged"/> when working with
         /// splines in the editor.
         /// </remarks>
         [Obsolete("Use Changed instead.", false)]
@@ -139,7 +139,7 @@ namespace UnityEngine.Splines
         /// </summary>
         /// <remarks>
         /// In the editor this can be invoked many times per-frame.
-        /// Prefer to use <see cref="UnityEditor.Splines.EditorSplineUtility.RegisterSplineDataChanged"/> when working with
+        /// Prefer to use <see cref="UnityEditor.BSplines.EditorSplineUtility.RegisterSplineDataChanged"/> when working with
         /// splines in the editor.
         /// </remarks>
         public event Action Changed;

@@ -4,14 +4,14 @@ using System.Linq;
 using Unity.Mathematics;
 using UnityEditor.EditorTools;
 using UnityEngine;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 using UObject = UnityEngine.Object;
 
 #if UNITY_2022_1_OR_NEWER
 using UnityEditor.Overlays;
 #endif
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
 #if UNITY_2022_1_OR_NEWER
     [CustomEditor(typeof(SplineToolContext))]

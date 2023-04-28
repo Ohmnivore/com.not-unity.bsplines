@@ -1,7 +1,7 @@
 // This file is generated. Do not modify by hand.
 // XML documentation file not found. To check if public methods have XML comments,
 // make sure the XML doc file is present and located next to the scraped dll
-namespace UnityEngine.Splines
+namespace UnityEngine.BSplines
 {
     public struct BezierCurve : System.IEquatable<BezierCurve>
     {
@@ -791,7 +791,7 @@ namespace UnityEngine.Splines
     }
 }
 
-namespace UnityEngine.Splines.Interpolators
+namespace UnityEngine.BSplines.Interpolators
 {
     public struct LerpColor : UnityEngine.Splines.IInterpolator<Color>
     {

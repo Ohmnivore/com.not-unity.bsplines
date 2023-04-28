@@ -5,14 +5,14 @@ using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 using Random = UnityEngine.Random;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-namespace UnityEngine.Splines
+namespace UnityEngine.BSplines
 {
     /// <summary>
     /// SplineInstantiate is used to automatically instantiate prefabs or objects along a spline.

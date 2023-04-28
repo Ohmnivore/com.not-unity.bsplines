@@ -1,7 +1,7 @@
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace UnityEngine.Splines
+namespace UnityEngine.BSplines
 {
     static class MathUtility
     {

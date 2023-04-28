@@ -1,7 +1,7 @@
 using System;
 using Unity.Mathematics;
 
-namespace UnityEngine.Splines
+namespace UnityEngine.BSplines
 {
     /// <summary>
     /// Wrapper for accessing a <see cref="SplineData{T}"/> value stored on <see cref="Spline"/> through one of the

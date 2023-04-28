@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.EditorTools;
 using UnityEngine;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 using Unity.Mathematics;
 using UnityEditor.SettingsManagement;
 using UnityEditor.ShortcutManagement;
@@ -18,7 +18,7 @@ using UnityEditor.Toolbars;
 using UnityEngine.UIElements;
 #endif
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     [CustomEditor(typeof(KnotPlacementTool))]
 #if UNITY_2022_1_OR_NEWER

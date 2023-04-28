@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using UnityEngine.Splines;
+using UnityEngine.BSplines;
 using UnityEngine.UIElements;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     interface IElementDrawer
     {

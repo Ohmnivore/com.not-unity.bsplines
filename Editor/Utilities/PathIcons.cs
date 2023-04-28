@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace UnityEditor.Splines
+namespace UnityEditor.BSplines
 {
     static class PathIcons
     {
