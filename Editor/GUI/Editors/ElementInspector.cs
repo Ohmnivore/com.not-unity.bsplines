@@ -26,9 +26,9 @@ namespace UnityEditor.BSplines
         public ElementInspector()
         {
             if (s_CommonStyleSheet == null)
-                s_CommonStyleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Packages/com.unity.bsplines/Editor/Stylesheets/SplineInspectorCommon.uss");
+                s_CommonStyleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Packages/com.not-unity.bsplines/Editor/Stylesheets/SplineInspectorCommon.uss");
             if (s_ThemeStyleSheet == null)
-                s_ThemeStyleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>($"Packages/com.unity.bsplines/Editor/Stylesheets/SplineInspector{(EditorGUIUtility.isProSkin ? "Dark" : "Light")}.uss");
+                s_ThemeStyleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>($"Packages/com.not-unity.bsplines/Editor/Stylesheets/SplineInspector{(EditorGUIUtility.isProSkin ? "Dark" : "Light")}.uss");
 
             styleSheets.Add(s_CommonStyleSheet);
             styleSheets.Add(s_ThemeStyleSheet);

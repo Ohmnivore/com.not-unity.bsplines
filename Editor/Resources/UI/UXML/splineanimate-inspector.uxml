@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <Style src="project://database/Packages/com.unity.bsplines/Editor/Stylesheets/SplineAnimateInspectorCommon.uss?fileID=7433441132597879392&amp;guid=2a8a7b20b8efb4f0ab1c2301dbc0e86c&amp;type=3#SplineAnimateInspectorCommon" />
+    <Style src="project://database/Packages/com.not-unity.bsplines/Editor/Stylesheets/SplineAnimateInspectorCommon.uss?fileID=7433441132597879392&amp;guid=2a8a7b20b8efb4f0ab1c2301dbc0e86c&amp;type=3#SplineAnimateInspectorCommon" />
     <uie:PropertyField name="spline-container" binding-path="m_Target" label="Spline" focusable="true" />
     <ui:Label text="Animated Object Setup" display-tooltip-when-elided="true" name="animated-object-setup" style="margin-left: 3px; margin-right: 3px; margin-top: 3px; margin-bottom: 3px; -unity-font-style: bold;" />
     <uie:EnumField name="object-up" label="Up Axis " type="UnityEngine.Splines.SplineComponent+AlignAxis, Unity.Splines" binding-path="m_ObjectUpAxis" value="YAxis" class="unity-base-field__aligned field-label__indented" />

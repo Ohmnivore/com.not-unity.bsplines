@@ -38,7 +38,7 @@ namespace UnityEditor.BSplines
 #endif
     public sealed class SplineToolContext : EditorToolContext
     {
-        const string k_IconPath = "Packages/com.unity.bsplines/Editor/Resources/Icons/SplineContext.png";
+        const string k_IconPath = "Packages/com.not-unity.bsplines/Editor/Resources/Icons/SplineContext.png";
 
         static bool s_UseCustomSplineHandles = false;
 

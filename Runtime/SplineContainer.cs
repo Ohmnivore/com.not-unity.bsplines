@@ -15,7 +15,7 @@ namespace UnityEngine.BSplines
     [ExecuteInEditMode]
     public sealed class SplineContainer : MonoBehaviour, ISplineContainer, ISerializationCallbackReceiver
     {
-        const string k_IconPath = "Packages/com.unity.bsplines/Editor/Resources/Icons/SplineComponent.png";
+        const string k_IconPath = "Packages/com.not-unity.bsplines/Editor/Resources/Icons/SplineComponent.png";
 
         // Keeping a main spline to be backwards compatible with older versions of the spline package
         [SerializeField, Obsolete, HideInInspector]

@@ -8,8 +8,8 @@ namespace UnityEditor.BSplines
     [EditorToolbarElement("B-Spline Tool Settings/Handle Rotation")]
     class HandleRotationDropdown : EditorToolbarDropdown
     {
-        const string k_ParentRotationIconPath = "Packages/com.unity.bsplines/Editor/Resources/Icons/ToolHandleParent.png";
-        const string k_ElementRotationIconPath = "Packages/com.unity.bsplines/Editor/Resources/Icons/ToolHandleElement.png";
+        const string k_ParentRotationIconPath = "Packages/com.not-unity.bsplines/Editor/Resources/Icons/ToolHandleParent.png";
+        const string k_ElementRotationIconPath = "Packages/com.not-unity.bsplines/Editor/Resources/Icons/ToolHandleElement.png";
         
         readonly List<GUIContent> m_OptionContents = new List<GUIContent>();
 
