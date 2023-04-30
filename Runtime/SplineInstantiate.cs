@@ -930,7 +930,8 @@ namespace UnityEngine.BSplines
                         var instance = m_Instances[i];
                         var splineT = m_TimesCache[i - indexOffset];
 
-                        nativeSpline.Evaluate(splineT, out var position, out var direction, out var splineUp);
+                        nativeSpline.Evaluate(splineT, out var position, out var direction);
+                        var splineUp = Vector3.up;
                         instance.transform.position = position;
 
                         if (m_Method == Method.LinearDistance)

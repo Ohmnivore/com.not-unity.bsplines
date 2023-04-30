@@ -294,7 +294,8 @@ namespace UnityEditor.BSplines
                 return;
 
             const float k_OffsetGizmoSize = 0.15f;
-            splineAnimate.Container.Evaluate(splineAnimate.StartOffsetT, out var offsetPos, out var forward, out var up);
+            splineAnimate.Container.Evaluate(splineAnimate.StartOffsetT, out var offsetPos, out var forward);
+            var up = Vector3.up;
 
 #if UNITY_2022_2_OR_NEWER
             using (new Handles.DrawingScope(Handles.elementColor))

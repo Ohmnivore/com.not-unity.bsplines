@@ -3,40 +3,33 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using Unity.Collections;
 using Unity.Mathematics;
 using UObject = UnityEngine.Object;
 
 namespace UnityEngine.BSplines
 {
     /// <summary>
-    /// The Spline class is a collection of <see cref="BezierKnot"/>, the closed/open state, and editing representation.
+    /// The Spline class is a collection of <see cref="ControlPoint"/>, the closed/open state, and editing representation.
     /// </summary>
     [Serializable]
-    public class Spline : ISpline, IList<BezierKnot>
+    public class Spline : ISpline, IList<ControlPoint>
     {
-        const TangentMode k_DefaultTangentMode = TangentMode.Broken;
-        const BezierTangent k_DefaultMainTangent = BezierTangent.Out;
         const int k_BatchModification = -1;
 
         [Serializable]
         sealed class MetaData
         {
-            public TangentMode Mode;
-            public float Tension;
             public DistanceToInterpolation[] DistanceToInterpolation = new DistanceToInterpolation[k_CurveDistanceLutResolution];
 
             public MetaData()
             {
-                Mode = k_DefaultTangentMode;
-                Tension = SplineUtility.CatmullRomTension;
                 InvalidateCache();
             }
 
             public MetaData(MetaData toCopy)
             {
-                Mode = toCopy.Mode;
                 Array.Copy(toCopy.DistanceToInterpolation, DistanceToInterpolation, DistanceToInterpolation.Length);
-                Tension = toCopy.Tension;
             }
 
             public void InvalidateCache()
@@ -47,13 +40,8 @@ namespace UnityEngine.BSplines
 
         const int k_CurveDistanceLutResolution = 30;
 
-        [SerializeField, Obsolete, HideInInspector]
-#pragma warning disable CS0618
-        SplineType m_EditModeType = SplineType.Bezier;
-#pragma warning restore CS0618
-
         [SerializeField]
-        List<BezierKnot> m_Knots = new List<BezierKnot>();
+        List<ControlPoint> m_Knots = new List<ControlPoint>();
 
         float m_Length = -1f;
 
@@ -308,258 +296,14 @@ namespace UnityEngine.BSplines
         }
 
         /// <summary>
-        /// Ensure that a <see cref="BezierKnot"/> has the correct tangent and rotation values to match it's
-        /// <see cref="TangentMode"/> and tension. This can be necessary if knot data is modified outside of the Spline
-        /// class (ex, manually setting the <see cref="Knots"/> array without taking care to also set the tangent
-        /// modes).
-        /// </summary>
-        /// <param name="index">The knot index to set tangent and rotation values for.</param>
-        public void EnforceTangentModeNoNotify(int index) => EnforceTangentModeNoNotify(new SplineRange(index, 1));
-
-        /// <summary>
-        /// Ensure that a <see cref="BezierKnot"/> has the correct tangent and rotation values to match it's
-        /// <see cref="TangentMode"/> and tension. This can be necessary if knot data is modified outside of the Spline
-        /// class (ex, manually setting the <see cref="Knots"/> array without taking care to also set the tangent
-        /// modes).
-        /// </summary>
-        /// <param name="range">The <see cref="SplineRange"/> range of knot indices to set tangent and rotation values
-        /// for.</param>
-        public void EnforceTangentModeNoNotify(SplineRange range)
-        {
-            for(int i = range.Start; i <= range.End; ++i)
-                ApplyTangentModeNoNotify(i);
-        }
-
-        /// <summary>
-        /// Gets the <see cref="TangentMode"/> for a knot index.
-        /// </summary>
-        /// <param name="index">The index to retrieve <see cref="TangentMode"/> data for.</param>
-        /// <returns>A <see cref="TangentMode"/> for the knot at index.</returns>
-        public TangentMode GetTangentMode(int index)
-        {
-            EnsureMetaDataValid();
-            return m_MetaData[index].Mode;
-        }
-
-        /// <summary>
-        /// Sets the <see cref="TangentMode"/> for all knots on this spline.
-        /// </summary>
-        /// <param name="mode">The <see cref="TangentMode"/> to apply to each knot.</param>
-        public void SetTangentMode(TangentMode mode)
-        {
-            SetTangentMode(new SplineRange(0, Count), mode);
-        }
-
-        /// <summary>
-        /// Sets the <see cref="TangentMode"/> for a knot, and ensures that the rotation and tangent values match the
-        /// behavior of the tangent mode.
-        /// This function can modify the contents of the <see cref="BezierKnot"/> at the specified index.
-        /// </summary>
-        /// <param name="index">The index of the knot to set.</param>
-        /// <param name="mode">The mode to set.</param>
-        /// <param name="main">The tangent direction to align both the In and Out tangent when assigning Continuous
-        /// or Mirrored tangent mode.</param>
-        public void SetTangentMode(int index, TangentMode mode, BezierTangent main = k_DefaultMainTangent)
-        {
-            if (GetTangentMode(index) == mode)
-                return;
-            SetTangentMode(new SplineRange(index, 1), mode, main);
-        }
-
-        /// <summary>
-        /// Sets the <see cref="TangentMode"/> for a series of knots, and ensures that the rotation and tangent values
-        /// match the behavior of the tangent mode.
-        /// This function can modify the contents of the <see cref="BezierKnot"/> at the specified indices.
-        /// </summary>
-        /// <param name="range">The range of knot indices to set.</param>
-        /// <param name="mode">The mode to set.</param>
-        /// <param name="main">The tangent direction to align both the In and Out tangent with when Continuous or
-        /// Mirrored tangent mode is assigned .</param>
-        public void SetTangentMode(SplineRange range, TangentMode mode, BezierTangent main = k_DefaultMainTangent)
-        {
-            foreach (var index in range)
-            {
-                CacheKnotOperationCurves(index);
-                SetTangentModeNoNotify(index, mode, main);
-                SetDirty(SplineModification.KnotModified, index);
-            }
-        }
-
-        /// <summary>
-        /// Sets the <see cref="TangentMode"/> for a knot, and ensures that the rotation and tangent values match the
-        /// behavior of the tangent mode. No changed callbacks will be invoked.
-        /// This function can modify the contents of the <see cref="BezierKnot"/> at the specified index.
-        /// </summary>
-        /// <param name="index">The index of the knot to set.</param>
-        /// <param name="mode">The mode to set.</param>
-        /// <param name="main">The tangent direction to align both the In and Out tangent when assigning Continuous
-        /// or Mirrored tangent mode.</param>
-        public void SetTangentModeNoNotify(int index, TangentMode mode, BezierTangent main = k_DefaultMainTangent)
-        {
-            EnsureMetaDataValid();
-
-            var knot = m_Knots[index];
-
-            // If coming from a tangent mode where tangents are locked to 0 length, preset the Bezier tangents with a
-            // likely non-zero length.
-            if(m_MetaData[index].Mode == TangentMode.Linear && mode >= TangentMode.Mirrored)
-            {
-
-                knot.TangentIn = SplineUtility.GetExplicitLinearTangent(knot, this.Previous(index));
-                knot.TangentOut = SplineUtility.GetExplicitLinearTangent(knot, this.Next(index));
-            }
-
-            m_MetaData[index].Mode = mode;
-            m_Knots[index] = knot;
-            ApplyTangentModeNoNotify(index, main);
-        }
-
-        /// <summary>
-        /// Ensures that the tangents at an index conform to the tangent mode.
-        /// </summary>
-        /// <remarks>
-        /// This function updates the tangents, but does not set the tangent mode.
-        /// </remarks>
-        /// <param name="index">The index of the knot to set tangent values for.</param>
-        /// <param name="main">The tangent direction to align the In and Out tangent to when assigning Continuous
-        /// or Mirrored tangent mode.</param>
-        void ApplyTangentModeNoNotify(int index, BezierTangent main = k_DefaultMainTangent)
-        {
-            var knot = m_Knots[index];
-            var mode = GetTangentMode(index);
-
-            switch(mode)
-            {
-                case TangentMode.Continuous:
-                    knot = knot.BakeTangentDirectionToRotation(false, main);
-                    break;
-
-                case TangentMode.Mirrored:
-                    knot = knot.BakeTangentDirectionToRotation(true, main);
-                    break;
-
-                case TangentMode.Linear:
-                    knot.TangentIn = float3.zero;
-                    knot.TangentOut = float3.zero;
-                    break;
-
-                case TangentMode.AutoSmooth:
-                    knot = SplineUtility.GetAutoSmoothKnot(knot.Position,
-                        this.Previous(index).Position,
-                        this.Next(index).Position,
-                        math.mul(knot.Rotation, math.up()),
-                        m_MetaData[index].Tension);
-                    break;
-            }
-
-            m_Knots[index] = knot;
-            SetDirtyNoNotify();
-        }
-
-        /// <summary>
-        /// Gets the tension value for the requested index.
-        /// </summary>
-        /// <param name="index">The knot index to get a tension value for.</param>
-        /// <returns>Returns the tension value for the requested index.</returns>
-        public float GetAutoSmoothTension(int index) => m_MetaData[index].Tension;
-
-        /// <summary>
-        /// Sets the tension that is used to calculate the magnitude of tangents when the <see cref="TangentMode"/> is
-        /// <see cref="TangentMode.AutoSmooth"/>. Valid values are between 0 and 1.
-        /// A lower value results in sharper curves, whereas higher values appear more rounded.
-        /// </summary>
-        /// <param name="index">The knot index to set a tension value for.</param>
-        /// <param name="tension">Set the length of the tangent vectors.</param>
-        public void SetAutoSmoothTension(int index, float tension)
-        {
-            SetAutoSmoothTension(new SplineRange(index, 1), tension);
-        }
-
-        /// <summary>
-        /// Sets the tension that is used to calculate the magnitude of tangents when the <see cref="TangentMode"/> is
-        /// <see cref="TangentMode.AutoSmooth"/>. Valid values are between 0 and 1.
-        /// A lower value results in sharper curves, whereas higher values appear more rounded.
-        /// </summary>
-        /// <param name="range">The range of knot indices to set a tension value for.</param>
-        /// <param name="tension">Set the length of the tangent vectors.</param>
-        public void SetAutoSmoothTension(SplineRange range, float tension)
-        {
-            SetAutoSmoothTensionInternal(range, tension, true);
-        }
-
-        /// <summary>
-        /// Sets the tension that is used to calculate the magnitude of tangents when the <see cref="TangentMode"/> is
-        /// <see cref="TangentMode.AutoSmooth"/>. Valid values are between 0 and 1.
-        /// A lower value results in sharper curves, whereas higher values appear more rounded.
-        /// No changed callbacks will be invoked.
-        /// </summary>
-        /// <param name="index">The knot index to set a tension value for.</param>
-        /// <param name="tension">Set the length of the tangent vectors for a knot set to <see cref="TangentMode.AutoSmooth"/>.</param>
-        public void SetAutoSmoothTensionNoNotify(int index, float tension)
-        {
-            SetAutoSmoothTensionInternal(new SplineRange(index, 1), tension, false);
-        }
-
-        /// <summary>
-        /// Set the tension that is used to calculate the magnitude of tangents when the <see cref="TangentMode"/> is
-        /// <see cref="TangentMode.AutoSmooth"/>. Valid values are between 0 and 1.
-        /// A lower value results in sharper curves, whereas higher values appear more rounded.
-        /// No changed callbacks will be invoked.
-        /// </summary>
-        /// <param name="range">The range of knot indices to set a tension value for.</param>
-        /// <param name="tension">Set the length of the tangent vectors for a knot set to <see cref="TangentMode.AutoSmooth"/>.</param>
-        public void SetAutoSmoothTensionNoNotify(SplineRange range, float tension)
-        {
-            SetAutoSmoothTensionInternal(range, tension, false);
-        }
-
-        void SetAutoSmoothTensionInternal(SplineRange range, float tension, bool setDirty)
-        {
-            for (int i = 0, c = range.Count; i < c; ++i)
-            {
-                var index = range[i];
-                CacheKnotOperationCurves(index);
-                m_MetaData[index].Tension = tension;
-                if(m_MetaData[index].Mode == TangentMode.AutoSmooth)
-                    ApplyTangentModeNoNotify(index);
-
-                if (setDirty)
-                    SetDirty(SplineModification.KnotModified, index);
-            }
-        }
-
-        /// <summary>
-        /// The SplineType that this spline should be presented as to the user.
-        /// </summary>
-        /// <remarks>
-        /// Internally all splines are stored as a collection of Bezier knots, and when editing converted or displayed
-        /// with the handles appropriate to the editable type.
-        /// </remarks>
-        [Obsolete("Use GetTangentMode and SetTangentMode.")]
-        public SplineType EditType
-        {
-            get => m_EditModeType;
-            set
-            {
-                if (m_EditModeType == value)
-                    return;
-                m_EditModeType = value;
-                var mode = value.GetTangentMode();
-                for(int i = 0; i < Count; ++i)
-                    SetTangentModeNoNotify(i, mode);
-                SetDirty(SplineModification.Default);
-            }
-        }
-
-        /// <summary>
         /// A collection of <see cref="BezierKnot"/>.
         /// </summary>
-        public IEnumerable<BezierKnot> Knots
+        public IEnumerable<ControlPoint> Knots
         {
             get => m_Knots;
             set
             {
-                m_Knots = new List<BezierKnot>(value);
+                m_Knots = new List<ControlPoint>(value);
                 m_MetaData = new List<MetaData>(m_Knots.Count);
                 SetDirty(SplineModification.Default);
             }
@@ -585,85 +329,21 @@ namespace UnityEngine.BSplines
         /// </summary>
         /// <param name="item">The knot to locate.</param>
         /// <returns>The zero-based index of the knot, or -1 if not found.</returns>
-        public int IndexOf(BezierKnot item) => m_Knots.IndexOf(item);
+        public int IndexOf(ControlPoint item) => m_Knots.IndexOf(item);
 
         /// <summary>
-        /// Insert a <see cref="BezierKnot"/> at the specified <paramref name="index"/>.
+        /// Adds a <see cref="ControlPoint"/> at the specified <paramref name="index"/>.
         /// </summary>
         /// <param name="index">The zero-based index to insert the new element.</param>
-        /// <param name="knot">The <see cref="BezierKnot"/> to insert.</param>
-        public void Insert(int index, BezierKnot knot) =>
-            Insert(index, knot, k_DefaultTangentMode, SplineUtility.CatmullRomTension);
-
-        /// <summary>
-        /// Inserts a <see cref="BezierKnot"/> at the specified <paramref name="index"/>.
-        /// </summary>
-        /// <param name="index">The zero-based index to insert the new element.</param>
-        /// <param name="knot">The <see cref="BezierKnot"/> to insert.</param>
-        /// <param name="mode">The <see cref="TangentMode"/> to apply to this knot. Tangent modes are enforced
-        /// when a knot value is set.</param>
-        public void Insert(int index, BezierKnot knot, TangentMode mode) =>
-            Insert(index, knot, mode, SplineUtility.CatmullRomTension);
-
-        /// <summary>
-        /// Adds a <see cref="BezierKnot"/> at the specified <paramref name="index"/>.
-        /// </summary>
-        /// <param name="index">The zero-based index to insert the new element.</param>
-        /// <param name="knot">The <see cref="BezierKnot"/> to insert.</param>
-        /// <param name="mode">The <see cref="TangentMode"/> to apply to this knot. Tangent modes are enforced
-        /// when a knot value is set.</param>
-        /// <param name="tension">The modifier value that is used to calculate the magnitude of tangents when the
-        /// <see cref="TangentMode"/> is <see cref="TangentMode.AutoSmooth"/>. Valid values are between 0 and 1.
-        /// A lower value results in sharper curves, whereas higher values appear more rounded.
+        /// <param name="knot">The <see cref="ControlPoint"/> to insert.</param>
         /// </param>
-        public void Insert(int index, BezierKnot knot, TangentMode mode, float tension)
+        public void Insert(int index, ControlPoint knot)
         {
             EnsureMetaDataValid();
             CacheKnotOperationCurves(index);
             m_Knots.Insert(index, knot);
-            m_MetaData.Insert(index, new MetaData() { Mode = mode, Tension = tension });
-            ApplyTangentModeNoNotify(this.PreviousIndex(index));
-            ApplyTangentModeNoNotify(index);
-            ApplyTangentModeNoNotify(this.NextIndex(index));
+            m_MetaData.Insert(index, new MetaData());
             SetDirty(SplineModification.KnotInserted, index);
-        }
-
-        /// <summary>
-        /// Creates a <see cref="BezierKnot"/> at the specified <paramref name="index"/> with a <paramref name="curveT"/> normalized offset.
-        /// </summary>
-        /// <param name="index">The zero-based index to insert the new element at.</param>
-        /// <param name="curveT">The normalized offset along the curve.</param>
-        /// </param>
-        internal void InsertOnCurve(int index, float curveT)
-        {
-            var previousIndex = SplineUtility.PreviousIndex(index, Count, Closed);
-            var previous = m_Knots[previousIndex];
-            var next = m_Knots[index];
-
-            var curveToSplit = new BezierCurve(previous, m_Knots[index]);
-            CurveUtility.Split(curveToSplit, curveT, out var leftCurve, out var rightCurve);
-
-            if (GetTangentMode(previousIndex) == TangentMode.Mirrored)
-                SetTangentMode(previousIndex, TangentMode.Continuous);
-
-            if (GetTangentMode(index) == TangentMode.Mirrored)
-                SetTangentMode(index, TangentMode.Continuous);
-
-            if (SplineUtility.AreTangentsModifiable(GetTangentMode(previousIndex)))
-                previous.TangentOut = math.mul(math.inverse(previous.Rotation), leftCurve.Tangent0);
-            if (SplineUtility.AreTangentsModifiable(GetTangentMode(index)))
-                next.TangentIn = math.mul(math.inverse(next.Rotation), rightCurve.Tangent1);
-
-            var up = CurveUtility.EvaluateUpVector(curveToSplit, curveT, math.rotate(previous.Rotation, math.up()), math.rotate(next.Rotation, math.up()));
-            var rotation = quaternion.LookRotationSafe(math.normalizesafe(rightCurve.Tangent0), up);
-            var inverseRotation = math.inverse(rotation);
-
-            SetKnotNoNotify(previousIndex, previous);
-            SetKnotNoNotify(index, next);
-
-            // Inserting the knot at the right position to compute correctly auto-smooth tangents
-            var bezierKnot = new BezierKnot(leftCurve.P3, math.mul(inverseRotation, leftCurve.Tangent1), math.mul(inverseRotation, rightCurve.Tangent0), rotation);
-            Insert(index, bezierKnot);
         }
 
         /// <summary>
@@ -678,12 +358,6 @@ namespace UnityEngine.BSplines
             m_MetaData.RemoveAt(index);
             var next = Mathf.Clamp(index, 0, Count-1);
 
-            if (Count > 0)
-            {
-                ApplyTangentModeNoNotify(this.PreviousIndex(next));
-                ApplyTangentModeNoNotify(next);
-            }
-
             SetDirty(SplineModification.KnotRemoved, index);
         }
 
@@ -691,7 +365,7 @@ namespace UnityEngine.BSplines
         /// Get or set the knot at <paramref name="index"/>.
         /// </summary>
         /// <param name="index">The zero-based index of the element to get or set.</param>
-        public BezierKnot this[int index]
+        public ControlPoint this[int index]
         {
             get => m_Knots[index];
             set => SetKnot(index, value);
@@ -700,35 +374,23 @@ namespace UnityEngine.BSplines
         /// <summary>
         /// Sets the value of a knot at index.
         /// </summary>
-        /// <param name="index">The index of the <see cref="BezierKnot"/> to set.</param>
-        /// <param name="value">The <see cref="BezierKnot"/> to set.</param>
-        /// <param name="main">The tangent to prioritize if the tangents are modified to conform with the
-        /// <see cref="TangentMode"/> set for this knot.</param>
-        public void SetKnot(int index, BezierKnot value, BezierTangent main = k_DefaultMainTangent)
+        /// <param name="index">The index of the <see cref="ControlPoint"/> to set.</param>
+        /// <param name="value">The <see cref="ControlPoint"/> to set.</param>
+        public void SetKnot(int index, ControlPoint value)
         {
             CacheKnotOperationCurves(index);
-            SetKnotNoNotify(index, value, main);
+            SetKnotNoNotify(index, value);
             SetDirty(SplineModification.KnotModified, index);
         }
 
         /// <summary>
         /// Sets the value of a knot index without invoking any change callbacks.
         /// </summary>
-        /// <param name="index">The index of the <see cref="BezierKnot"/> to set.</param>
-        /// <param name="value">The <see cref="BezierKnot"/> to set.</param>
-        /// <param name="main">The tangent to prioritize if the tangents are modified to conform with the
-        /// <see cref="TangentMode"/> set for this knot.</param>
-        public void SetKnotNoNotify(int index, BezierKnot value, BezierTangent main = k_DefaultMainTangent)
+        /// <param name="index">The index of the <see cref="ControlPoint"/> to set.</param>
+        /// <param name="value">The <see cref="ControlPoint"/> to set.</param>
+        public void SetKnotNoNotify(int index, ControlPoint value)
         {
             m_Knots[index] = value;
-            ApplyTangentModeNoNotify(index, main);
-
-            // setting knot position affects the tangents of neighbor auto-smooth (catmull-rom) knots
-            int p = this.PreviousIndex(index), n = this.NextIndex(index);
-            if(m_MetaData[p].Mode == TangentMode.AutoSmooth)
-                ApplyTangentModeNoNotify(p, main);
-            if(m_MetaData[n].Mode == TangentMode.AutoSmooth)
-                ApplyTangentModeNoNotify(n, main);
         }
 
         /// <summary>
@@ -743,16 +405,16 @@ namespace UnityEngine.BSplines
         /// <param name="closed">Whether the spline is open (has a start and end point) or closed (forms an unbroken loop).</param>
         public Spline(int knotCapacity, bool closed = false)
         {
-            m_Knots = new List<BezierKnot>(knotCapacity);
+            m_Knots = new List<ControlPoint>(knotCapacity);
             m_Closed = closed;
         }
 
         /// <summary>
-        /// Create a spline from a collection of <see cref="BezierKnot"/>.
+        /// Create a spline from a collection of <see cref="ControlPoint"/>.
         /// </summary>
-        /// <param name="knots">A collection of <see cref="BezierKnot"/>.</param>
+        /// <param name="knots">A collection of <see cref="ControlPoint"/>.</param>
         /// <param name="closed">Whether the spline is open (has a start and end point) or closed (forms an unbroken loop).</param>
-        public Spline(IEnumerable<BezierKnot> knots, bool closed = false)
+        public Spline(IEnumerable<ControlPoint> knots, bool closed = false)
         {
             m_Knots = knots.ToList();
             m_Closed = closed;
@@ -778,17 +440,165 @@ namespace UnityEngine.BSplines
                 m_ObjectData[data.Key] = data.Value;
         }
 
+        public static (ControlPoint, ControlPoint, ControlPoint, ControlPoint) GetCurveControlPointsForIndex(int index, IList<ControlPoint> points, bool closed)
+        {
+            if (points.Count == 1)
+            {
+                ControlPoint first = points[0];
+                return (first, first, first, first);
+            }
+
+            if (closed)
+            {
+                int p0Index = (index - 1 + points.Count) % points.Count;
+                int p1Index = index;
+                int p2Index = (index + 1) % points.Count;
+                int p3Index = (index + 2) % points.Count;
+
+                ControlPoint p0 = points[p0Index];
+                ControlPoint p1 = points[p1Index];
+                ControlPoint p2 = points[p2Index];
+                ControlPoint p3 = points[p3Index];
+
+                return (p0, p1, p2, p3);
+            }
+            else
+            {
+                int p0Index = index - 1;
+                int p1Index = index;
+                int p2Index = index + 1;
+                int p3Index = index + 2;
+
+                ControlPoint p0;
+                ControlPoint p1 = points[p1Index];
+                ControlPoint p2;
+                ControlPoint p3;
+
+                if (p0Index < 0)
+                {
+                    var first = points[0];
+                    var second = points[1];
+                    p0 = second.GetMirrorAround(first);
+                }
+                else
+                {
+                    p0 = points[p0Index];
+                }
+
+                if (p2Index >= points.Count)
+                {
+                    var last = points[points.Count - 1];
+                    var beforeLast = points[points.Count - 2];
+                    p2 = beforeLast.GetMirrorAround(last);
+                    p3 = last.GetMirrorAround(p2);
+                }
+                else
+                {
+                    p2 = points[p2Index];
+
+                    if (p3Index >= points.Count)
+                    {
+                        var last = points[points.Count - 1];
+                        var beforeLast = points[points.Count - 2];
+                        p3 = beforeLast.GetMirrorAround(last);
+                    }
+                    else
+                    {
+                        p3 = points[p3Index];
+                    }
+                }
+
+                return (p0, p1, p2, p3);
+            }
+        }
+
+        public static BSplineCurve GetCurveForControlPoint(int index, IList<ControlPoint> points, bool closed)
+        {
+            var (p0, p1, p2, p3) = GetCurveControlPointsForIndex(index, points, closed);
+            return new BSplineCurve(p0, p1, p2, p3);
+        }
+
+        public static BSplineCurve GetCurveForControlPoint(int index, NativeArray<ControlPoint> points, bool closed)
+        {
+            if (closed)
+            {
+                int p0Index = (index - 1 + points.Length) % points.Length;
+                int p1Index = index;
+                int p2Index = (index + 1) % points.Length;
+                int p3Index = (index + 2) % points.Length;
+
+                ControlPoint p0 = points[p0Index];
+                ControlPoint p1 = points[p1Index];
+                ControlPoint p2 = points[p2Index];
+                ControlPoint p3 = points[p3Index];
+
+                return new BSplineCurve(p0, p1, p2, p3);
+            }
+            else
+            {
+                int p0Index = index - 1;
+                int p1Index = index;
+                int p2Index = index + 1;
+                int p3Index = index + 2;
+
+                ControlPoint p0;
+                ControlPoint p1 = points[p1Index];
+                ControlPoint p2;
+                ControlPoint p3;
+
+                if (p0Index < 0)
+                {
+                    var first = points[0];
+                    var second = points[1];
+                    p0 = second.GetMirrorAround(first);
+                }
+                else
+                {
+                    p0 = points[p0Index];
+                }
+
+                if (p2Index >= points.Length)
+                {
+                    var last = points[points.Length - 1];
+                    var beforeLast = points[points.Length - 2];
+                    p2 = beforeLast.GetMirrorAround(last);
+                    p3 = last.GetMirrorAround(p2);
+                }
+                else
+                {
+                    p2 = points[p2Index];
+
+                    if (p3Index >= points.Length)
+                    {
+                        var last = points[points.Length - 1];
+                        var beforeLast = points[points.Length - 2];
+                        p3 = beforeLast.GetMirrorAround(last);
+                    }
+                    else
+                    {
+                        p3 = points[p3Index];
+                    }
+                }
+
+                return new BSplineCurve(p0, p1, p2, p3);
+            }
+        }
+
         /// <summary>
-        /// Get a <see cref="BezierCurve"/> from a knot index.
+        /// Get a <see cref="BSplineCurve"/> from a knot index.
         /// </summary>
         /// <param name="index">The knot index that serves as the first control point for this curve.</param>
         /// <returns>
-        /// A <see cref="BezierCurve"/> formed by the knot at index and the next knot.
+        /// A <see cref="BSplineCurve"/> formed by the knot at index and the next knot.
         /// </returns>
-        public BezierCurve GetCurve(int index)
+        public BSplineCurve GetCurve(int index)
         {
-            int next = m_Closed ? (index + 1) % m_Knots.Count : math.min(index + 1, m_Knots.Count - 1);
-            return new BezierCurve(m_Knots[index], m_Knots[next]);
+            return GetCurveForControlPoint(index, m_Knots, m_Closed);
+        }
+
+        public (ControlPoint p0, ControlPoint p1, ControlPoint p2, ControlPoint p3) GetCurveControlPoints(int index)
+        {
+            return GetCurveControlPointsForIndex(index, m_Knots, m_Closed);
         }
 
         /// <summary>
@@ -859,7 +669,7 @@ namespace UnityEngine.BSplines
         }
 
         /// <summary>
-        /// Change the size of the <see cref="BezierKnot"/> list.
+        /// Change the size of the <see cref="ControlPoint"/> list.
         /// </summary>
         /// <param name="newSize">The new size of the knots collection.</param>
         public void Resize(int newSize)
@@ -873,16 +683,13 @@ namespace UnityEngine.BSplines
             if (newSize > originalSize)
             {
                 while (m_Knots.Count < newSize)
-                    Add(new BezierKnot());
+                    Add(new ControlPoint());
 
             }
             else if (newSize < originalSize)
             {
                 while(newSize < Count)
                     RemoveAt(Count-1);
-                var last = newSize - 1;
-                if(last > -1 && last < m_Knots.Count)
-                    ApplyTangentModeNoNotify(last);
             }
         }
 
@@ -890,7 +697,7 @@ namespace UnityEngine.BSplines
         /// Create an array of spline knots.
         /// </summary>
         /// <returns>Return a new array copy of the knots collection.</returns>
-        public BezierKnot[] ToArray()
+        public ControlPoint[] ToArray()
         {
             return m_Knots.ToArray();
         }
@@ -915,10 +722,10 @@ namespace UnityEngine.BSplines
         }
 
         /// <summary>
-        /// Get an enumerator that iterates through the <see cref="BezierKnot"/> collection.
+        /// Get an enumerator that iterates through the <see cref="ControlPoint"/> collection.
         /// </summary>
-        /// <returns>An IEnumerator that is used to iterate the <see cref="BezierKnot"/> collection.</returns>
-        public IEnumerator<BezierKnot> GetEnumerator() => m_Knots.GetEnumerator();
+        /// <returns>An IEnumerator that is used to iterate the <see cref="ControlPoint"/> collection.</returns>
+        public IEnumerator<ControlPoint> GetEnumerator() => m_Knots.GetEnumerator();
 
         /// <summary>
         /// Gets an enumerator that iterates through the <see cref="BezierKnot"/> collection.
@@ -930,30 +737,9 @@ namespace UnityEngine.BSplines
         /// Adds a knot to the spline.
         /// </summary>
         /// <param name="item">The <see cref="BezierKnot"/> to add.</param>
-        public void Add(BezierKnot item) => Add(item, k_DefaultTangentMode);
-
-        /// <summary>
-        /// Adds a knot to the spline.
-        /// </summary>
-        /// <param name="item">The <see cref="BezierKnot"/> to add.</param>
-        /// <param name="mode">The tangent mode for this knot.</param>
-        public void Add(BezierKnot item, TangentMode mode)
+        public void Add(ControlPoint item)
         {
-            Insert(Count, item, mode);
-        }
-
-        /// <summary>
-        /// Adds a knot to the spline.
-        /// </summary>
-        /// <param name="item">The <see cref="BezierKnot"/> to add.</param>
-        /// <param name="mode">The tangent mode for this knot.</param>
-        /// <param name="tension">The modifier value that is used to calculate the magnitude of tangents when the
-        /// <see cref="TangentMode"/> is <see cref="TangentMode.AutoSmooth"/>. Valid values are between 0 and 1.
-        /// A lower value results in sharper curves, whereas higher values appear more rounded.
-        /// </param>
-        public void Add(BezierKnot item, TangentMode mode, float tension)
-        {
-            Insert(Count, item, mode, tension);
+            Insert(Count, item);
         }
 
         /// <summary>
@@ -972,21 +758,21 @@ namespace UnityEngine.BSplines
         /// </summary>
         /// <param name="item">The <see cref="BezierKnot"/> to locate.</param>
         /// <returns>Returns true if the knot is found, false if it is not present.</returns>
-        public bool Contains(BezierKnot item) => m_Knots.Contains(item);
+        public bool Contains(ControlPoint item) => m_Knots.Contains(item);
 
         /// <summary>
         /// Copies the contents of the knot list to an array starting at an index.
         /// </summary>
         /// <param name="array">The destination array to place the copied item in.</param>
         /// <param name="arrayIndex">The zero-based index to copy.</param>
-        public void CopyTo(BezierKnot[] array, int arrayIndex) => m_Knots.CopyTo(array, arrayIndex);
+        public void CopyTo(ControlPoint[] array, int arrayIndex) => m_Knots.CopyTo(array, arrayIndex);
 
         /// <summary>
         /// Removes the first matching knot.
         /// </summary>
         /// <param name="item">The <see cref="BezierKnot"/> to locate and remove.</param>
         /// <returns>Returns true if a matching item was found and removed, false if no match was discovered.</returns>
-        public bool Remove(BezierKnot item)
+        public bool Remove(ControlPoint item)
         {
             var index = m_Knots.IndexOf(item);
             if (index >= 0)

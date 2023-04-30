@@ -40,7 +40,7 @@ namespace UnityEngine.BSplines
     /// <summary>
     /// ISpline defines the interface from which Spline types inherit.
     /// </summary>
-    public interface ISpline : IReadOnlyList<BezierKnot>
+    public interface ISpline : IReadOnlyList<ControlPoint>
     {
         /// <summary>
         /// Whether the spline is open (has a start and end point) or closed (forms an unbroken loop).
@@ -56,13 +56,15 @@ namespace UnityEngine.BSplines
         float GetLength();
 
         /// <summary>
-        /// Get a <see cref="BezierCurve"/> from a knot index.
+        /// Get a <see cref="BSplineCurve"/> from a knot index.
         /// </summary>
         /// <param name="index">The knot index that serves as the first control point for this curve.</param>
         /// <returns>
-        /// A <see cref="BezierCurve"/> formed by the knot at index and the next knot.
+        /// A <see cref="BSplineCurve"/> formed by the knot at index and the next knot.
         /// </returns>
-        public BezierCurve GetCurve(int index);
+        public BSplineCurve GetCurve(int index);
+
+        public (ControlPoint p0, ControlPoint p1, ControlPoint p2, ControlPoint p3) GetCurveControlPoints(int index);
 
         /// <summary>
         /// Return the length of a curve.

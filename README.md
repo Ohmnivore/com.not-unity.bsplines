@@ -3,25 +3,75 @@ Based on [`com.unity.splines`](https://docs.unity3d.com/Packages/com.unity.splin
 
 The original package provides linear, cubic Bézier, and Catmull-Rom splines. They are not [C^2-continuous](https://www.youtube.com/watch?v=jvPPXbo87ds).
 
-This fork provides the uniform cubic B-Splines (with 4 control points per curve).
+This fork provides uniform cubic B-Splines.
+
+## Note
+Only B-Splines are supported in this package. Support of all other types has been removed for simplicity, although this package can be installed side by side with the original.
 
 # Installation
 * Install the package [from its git URL](https://docs.unity3d.com/Manual/upm-ui-giturl.html) or [from a local copy](https://docs.unity3d.com/Manual/upm-ui-local.html).
 * It does not depend on the `com.unity.splines` package and will not conflict with it if it's present
 
+# Beyond B-Splines
+B-Spline's are non-interpolating which makes the authoring of normals and links fairly challenging (see "Spline Normals" and "Spline Links" sections). Even position is difficult to author although this is a generally accepted trade-off. The clamping of open splines is also more complicated, requiring point mirroring instead of duplication.
+
+These problems combined make this fork a failed experiment for many (but not all) use cases. We are hitting the limit of what's possible with B-splines.
+
+Taking a step back then, an ideal spline for us should have the following properties:
+* C^2 continuity
+* Interpolating
+* Local support (~4 points)
+* Doesn't need global optimization
+* Good to have: Supports linear segments
+* Good to have: Supports perfectly circular segments
+* Good to have: Doesn't introduce any self-intersections
+
+[Cem Yuksel's class of C^2 interpolating splines](http://www.cemyuksel.com/research/interpolating_splines/a_class_of_c2_interpolating_splines.pdf) seem like an excellent candidate.
+
 # Possible Improvements
-* [Global curve interpolation](https://pages.mtu.edu/~shene/COURSES/cs3621/NOTES/INT-APP/CURVE-INT-global.html)
-* Automatic conversion between cubic Bézier and cubic B-Splines
-* Shared interfaces with `com.unity.splines`, less duplicated code
+* Reimplement using Yuksel splines
+* Curve interpolation (global or local with higher degree B-Splines)
+* Arbitrary B-Spline degree
+* Twist angles/vectors for normals along the spline (see "Spline Normals")
+* Better spline links (see "Spline Links")
+* Shared interfaces with `com.unity.splines`
 * Shader utility functions have not been reimplemented for B-Splines
 * Automated tests have not been reimplemented for B-Splines
-* Arbitrary degree and number of control points per curve? (https://xiaoxingchen.github.io/2020/03/02/bspline_in_so3/general_matrix_representation_for_bsplines.pdf)
+* B-Splines and other types of splines co-existing in one package
 
 # Implementation Details
-The B-Splines are [clamped](https://pages.mtu.edu/%7Eshene/COURSES/cs3621/NOTES/spline/bspline-curve-prop.html) to guarantee that they pass through the first and last points.
+For open splines, the control points are mirrored to ensure that the spline passes through its first and last points (unlike Bézier which gets away with simple clamping). For closed splines, the control points are wrapped to ensure continuity (same as Bézier).
 
-The splines are calculated internally using their matrix forms. The multiplication of the control point vector by the basis function matrix is cached for every point, so that evaluation at any given point only entails a vector dot product.
+Derivatives are analytical and need only be applied to the parameter vector `[1, t, t^2, t^3]`. This vector becomes `[0, 1, 2t, 3t^2]` for the tangent and `[0, 0, 2, 6t]` for the acceleration.
 
-Derivatives are analytical and re-use the same cached multiplication. Derivatives need only be applied to the parameter vector `[1, t, t^2, t^3]`. This vector becomes `[0, 1, 2t, 3t^2]` for the tangent and `[0, 0, 2, 6t]` for the acceleration.
+The multiplication of the control point vector by the basis function matrix could maybe be cached for every `BSplineCurve`, and could be re-used for position and derivative computations.
 
-The quadratic B-Spline was not implemented. It may look enticing by having one less control point, especially in 2D contexts, but it isn't C^2-continuous. Only the first `degree - 1` derivatives of B-Splines are continuous.
+## Changes
+### BezierKnot -> ControlPoint
+The `BezierKnot` has been replaced by the `ControlPoint`. Major differences are:
+* No more concept of tangents or rotation
+* The spline doesn't necessarily pass through every control point
+
+Some of the API and comments still refer to knots. This should be interpreted as control points, not B-Spline basis knots (which are uniform and constant in this package).
+
+### BezierCurve -> BSplineCurve
+A cubic B-Spline is affected by at most 4 control points at any given location. This fact along with our constant knot vector allows us to evaluate a spline in segments for each control point using the `BSplineCurve` structure.
+
+### Finding adjacent control points
+Because of open spline clamping through point mirroring, it's no longer correct to resolve adjacent control points by incrementing/decrementing a control point index.
+
+The new `Spline.GetCurveControlPointsForIndex`, `Spline.GetCurveForControlPoint`, and `ISpline.GetCurveControlPoints` functions abstract the clamping and wrapping logic and should be used instead.
+
+# Spline Normals
+Due to time constraints and no obvious solution, spline normals have not been implemented at all.
+
+It could be possible to add twist angle handles at the control points. Or at points on the spline itself for more precise control.
+
+The `com.unity.splines` spline normal is a combination of RMF and SLERP, I'm not sure what is the resulting continuity. For B-Splines it would perhaps be natural to aim for C^2 continuity in the normals to match the tangents.
+
+# Spline Links
+Linking the endpoints of open splines together works as expected. In any other combination the splines might not meet, since control points usually wouldn't be located on the splines.
+
+One solution could be to link control points to a progress parameter of another spline. A downside is that the link point would be moved by any changes to its 4 neighboring control points.
+
+Another solution could be global/local curve interpolation, which can guarantee common points between different splines that won't be displaced by control points. Global interpolation loses locality, while local interpolation requires a degree higher than cubic. So neither are an ideal solution.

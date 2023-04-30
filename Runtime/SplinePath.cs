@@ -132,7 +132,7 @@ namespace UnityEngine.BSplines
         /// Gets an enumerator that iterates through the <see cref="BezierKnot"/> collection.
         /// </summary>
         /// <returns>An IEnumerator that is used to iterate the <see cref="BezierKnot"/> collection.</returns>
-        public IEnumerator<BezierKnot> GetEnumerator()
+        public IEnumerator<ControlPoint> GetEnumerator()
         {
             foreach (var branch in m_Splines)
                 foreach (var knot in branch)
@@ -169,7 +169,7 @@ namespace UnityEngine.BSplines
         /// are reversed.
         /// </summary>
         /// <param name="index">The zero-based index of the element to get.</param>
-        public BezierKnot this[int index] => this[GetBranchKnotIndex(index)];
+        public ControlPoint this[int index] => this[GetBranchKnotIndex(index)];
 
         /// <summary>
         /// Gets the knot at <paramref name="index"/>. If the <see cref="ISpline"/> segment that contains this
@@ -177,7 +177,7 @@ namespace UnityEngine.BSplines
         /// are reversed.
         /// </summary>
         /// <param name="index">The zero-based index of the slice and knot to get.</param>
-        public BezierKnot this[SplineKnotIndex index]
+        public ControlPoint this[SplineKnotIndex index]
         {
             get
             {
@@ -246,18 +246,25 @@ namespace UnityEngine.BSplines
         /// <returns>
         /// A <see cref="BezierCurve"/> formed by the knot at index and the next knot.
         /// </returns>
-        public BezierCurve GetCurve(int knot)
+        public BSplineCurve GetCurve(int knot)
+        {
+            var points = GetCurveControlPoints(knot);
+
+            return new BSplineCurve(points.p0, points.p1, points.p2, points.p3);
+        }
+
+        public (ControlPoint p0, ControlPoint p1, ControlPoint p2, ControlPoint p3) GetCurveControlPoints(int knot)
         {
             var index = GetBranchKnotIndex(knot);
 
             if (IsDegenerate(knot))
             {
-                var point = new BezierKnot(this[index].Position);
-                return new BezierCurve(point, point);
+                var point = new ControlPoint(this[index].Position);
+                return (point, point, point, point);
             }
 
-            BezierKnot a = this[index], b = this.Next(knot);
-            return new BezierCurve(a, b);
+            var spline = m_Splines[index.Spline];
+            return spline.GetCurveControlPoints(index.Knot);
         }
 
         /// <summary>

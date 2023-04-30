@@ -57,13 +57,14 @@ namespace UnityEngine.BSplines
             where K : struct, ISplineVertexData
         {
             var evaluationT = spline.Closed ? math.frac(t) : math.clamp(t, 0f, 1f);
-            spline.Evaluate(evaluationT, out var sp, out var st, out var up);
+            spline.Evaluate(evaluationT, out var sp, out var st);
+            var up = Vector3.up;
 
             var tangentLength = math.lengthsq(st);
             if (tangentLength == 0f || float.IsNaN(tangentLength))
             {
                 var adjustedT = math.clamp(evaluationT + (0.0001f * (t < 1f ? 1f : -1f)), 0f, 1f);
-                spline.Evaluate(adjustedT, out _, out st, out up);
+                spline.Evaluate(adjustedT, out _, out st);
             }
 
             st = math.normalize(st);

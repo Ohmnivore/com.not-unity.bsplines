@@ -18,10 +18,10 @@ namespace UnityEngine.BSplines
     public struct NativeSpline : ISpline, IDisposable
     {
         [ReadOnly]
-        NativeArray<BezierKnot> m_Knots;
+        NativeArray<ControlPoint> m_Knots;
 
         [ReadOnly]
-        NativeArray<BezierCurve> m_Curves;
+        NativeArray<BSplineCurve> m_Curves;
 
         // As we cannot make a NativeArray of NativeArray all segments lookup tables are stored in a single array
         // each lookup table as a length of k_SegmentResolution and starts at index i = curveIndex * k_SegmentResolution
@@ -38,7 +38,7 @@ namespace UnityEngine.BSplines
         /// <returns>
         /// Returns a reference to the knots array.
         /// </returns>
-        public NativeArray<BezierKnot> Knots => m_Knots;
+        public NativeArray<ControlPoint> Knots => m_Knots;
 
         /// <summary>
         /// A NativeArray of <see cref="BezierCurve"/> that form this Spline.
@@ -46,7 +46,7 @@ namespace UnityEngine.BSplines
         /// <returns>
         /// Returns a reference to the curves array.
         /// </returns>
-        public NativeArray<BezierCurve> Curves => m_Curves;
+        public NativeArray<BSplineCurve> Curves => m_Curves;
 
         /// <summary>
         /// Whether the spline is open (has a start and end point) or closed (forms an unbroken loop).
@@ -71,13 +71,13 @@ namespace UnityEngine.BSplines
         /// Get the knot at <paramref name="index"/>.
         /// </summary>
         /// <param name="index">The zero-based index of the knot.</param>
-        public BezierKnot this[int index] => m_Knots[index];
+        public ControlPoint this[int index] => m_Knots[index];
 
         /// <summary>
         /// Get an enumerator that iterates through the <see cref="BezierKnot"/> collection.
         /// </summary>
         /// <returns>An IEnumerator that is used to iterate the <see cref="BezierKnot"/> collection.</returns>
-        public IEnumerator<BezierKnot> GetEnumerator() => m_Knots.GetEnumerator();
+        public IEnumerator<ControlPoint> GetEnumerator() => m_Knots.GetEnumerator();
 
         /// <summary>
         /// Gets an enumerator that iterates through the <see cref="BezierKnot"/> collection.
@@ -118,7 +118,7 @@ namespace UnityEngine.BSplines
         /// <param name="transform">Apply a transformation matrix to the control <see cref="Knots"/>.</param>
         /// <param name="allocator">The memory allocation method to use when reserving space for native arrays.</param>
         public NativeSpline(
-            IReadOnlyList<BezierKnot> knots,
+            IReadOnlyList<ControlPoint> knots,
             bool closed,
             float4x4 transform,
             Allocator allocator = Allocator.Temp) : this(knots, null, closed, transform, allocator)
@@ -135,11 +135,11 @@ namespace UnityEngine.BSplines
         /// <param name="closed">Whether the spline is open (has a start and end point) or closed (forms an unbroken loop).</param>
         /// <param name="transform">Apply a transformation matrix to the control <see cref="Knots"/>.</param>
         /// <param name="allocator">The memory allocation method to use when reserving space for native arrays.</param>
-        public NativeSpline(IReadOnlyList<BezierKnot> knots, IReadOnlyList<int> splits, bool closed, float4x4 transform, Allocator allocator = Allocator.Temp)
+        public NativeSpline(IReadOnlyList<ControlPoint> knots, IReadOnlyList<int> splits, bool closed, float4x4 transform, Allocator allocator = Allocator.Temp)
         {
             int kc = knots.Count;
-            m_Knots = new NativeArray<BezierKnot>(kc, allocator);
-            m_Curves = new NativeArray<BezierCurve>(kc, allocator);
+            m_Knots = new NativeArray<ControlPoint>(kc, allocator);
+            m_Curves = new NativeArray<BSplineCurve>(kc, allocator);
             m_SegmentLengthsLookupTable = new NativeArray<DistanceToInterpolation>(kc * k_SegmentResolution, allocator);
             m_Closed = closed;
             m_Length = 0f;
@@ -152,21 +152,25 @@ namespace UnityEngine.BSplines
 
             if (knots.Count > 0)
             {
-                BezierKnot cur = knots[0].Transform(transform);
                 for (int i = 0; i < kc; ++i)
                 {
-                    BezierKnot next = knots[(i + 1) % kc].Transform(transform);
-                    m_Knots[i] = cur;
+                    var p = knots[i];
+                    p = p.Transform(transform);
+                    m_Knots[i] = p;
+                }
 
+                for (int i = 0; i < kc; ++i)
+                {
                     if (splits != null && splits.Contains(i))
                     {
-                        m_Curves[i] = new BezierCurve(new BezierKnot(cur.Position), new BezierKnot(cur.Position));
+                        var p = m_Knots[i];
+                        m_Curves[i] = new BSplineCurve(p, p, p, p);
                         for (int n = 0; n < k_SegmentResolution; ++n)
                             distanceToTimes[n] = new DistanceToInterpolation();
                     }
                     else
                     {
-                        m_Curves[i] = new BezierCurve(cur, next);
+                        m_Curves[i] = Spline.GetCurveForControlPoint(i, m_Knots, m_Closed);
                         CurveUtility.CalculateCurveLengths(m_Curves[i], distanceToTimes);
                     }
 
@@ -175,8 +179,6 @@ namespace UnityEngine.BSplines
 
                     for (int distanceToTimeIndex = 0; distanceToTimeIndex < k_SegmentResolution; distanceToTimeIndex++)
                         m_SegmentLengthsLookupTable[i * k_SegmentResolution + distanceToTimeIndex] = distanceToTimes[distanceToTimeIndex];
-
-                    cur = next;
                 }
             }
         }
@@ -188,7 +190,13 @@ namespace UnityEngine.BSplines
         /// <returns>
         /// A <see cref="BezierCurve"/> formed by the knot at index and the next knot.
         /// </returns>
-        public BezierCurve GetCurve(int index) => m_Curves[index];
+        public BSplineCurve GetCurve(int index) => m_Curves[index];
+
+        public (ControlPoint p0, ControlPoint p1, ControlPoint p2, ControlPoint p3) GetCurveControlPoints(int index)
+        {
+            // TODO
+            return (default, default, default, default);
+        }
 
 
         /// <summary>
@@ -207,7 +215,6 @@ namespace UnityEngine.BSplines
         public void Dispose()
         {
             m_Knots.Dispose();
-            m_Curves.Dispose();
             m_SegmentLengthsLookupTable.Dispose();
         }
 

@@ -45,8 +45,6 @@ namespace UnityEditor.BSplines
         readonly SplineElementRectSelector m_RectSelector = new SplineElementRectSelector();
         readonly List<SplineInfo> m_Splines = new List<SplineInfo>();
 
-        readonly List<SelectableTangent> m_TangentBuffer = new List<SelectableTangent>();
-
         bool m_WasActiveAfterDeserialize;
 
         internal static void UseCustomSplineHandles(bool useCustomSplineHandle)
@@ -65,8 +63,6 @@ namespace UnityEditor.BSplines
                 return typeof(SplineMoveTool);
             if (tool == Tool.Rotate)
                 return typeof(SplineRotateTool);
-            if (tool == Tool.Scale)
-                return typeof(SplineScaleTool);
             return null;
         }
 
@@ -184,11 +180,6 @@ namespace UnityEditor.BSplines
                             splinesToRemove.Add(spline);
                     }
                 }
-
-                // "Delete" remaining tangents by zeroing them out
-                SplineSelection.GetElements(m_Splines, m_TangentBuffer);
-                for (int i = m_TangentBuffer.Count - 1; i >= 0; --i)
-                    EditorSplineUtility.ClearTangent(m_TangentBuffer[i]);
 
                 // Sort spline index so removing them doesn't cause the rest of the indices to be invalid
                 splinesToRemove.Sort((a, b) => a.Index.CompareTo(b.Index));
@@ -320,7 +311,6 @@ namespace UnityEditor.BSplines
         void SelectAll()
         {
             var knots = new List<SelectableKnot>();
-            var tangents = new List<SelectableTangent>(knots.Count() * 2);
 
             foreach (var info in m_Splines)
             {
@@ -329,22 +319,11 @@ namespace UnityEditor.BSplines
                     for (int knotIdx = 0; knotIdx < info.Spline.Count; ++knotIdx)
                     {
                         knots.Add(new SelectableKnot(info, knotIdx));
-
-                        void TryAddSelectableTangent(BezierTangent tan)
-                        {
-                            var t = new SelectableTangent(info, knotIdx, tan);
-                            if (SplineSelectionUtility.IsSelectable(t))
-                                tangents.Add(t);
-                        }
-
-                        TryAddSelectableTangent(BezierTangent.In);
-                        TryAddSelectableTangent(BezierTangent.Out);
                     }
                 }
             }
 
             SplineSelection.AddRange(knots);
-            SplineSelection.AddRange(tangents);
 
         }
 

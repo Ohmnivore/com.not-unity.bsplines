@@ -71,22 +71,15 @@ namespace UnityEngine.BSplines
         public NativeArray<float3> Tangents;
 
         /// <summary>
-        /// A NativeArray of float3 to be written. The size of this array must match the length of <see cref="Positions"/>.
-        /// </summary>
-        [WriteOnly]
-        public NativeArray<float3> Normals;
-
-        /// <summary>
         /// Called by the job system to evaluate position, tangent, and normal at an index. The interpolation value is
         /// calculated as `index / positions.Length - 1`.
         /// </summary>
         /// <param name="index">The index of the positions array to evaluate.</param>
         public void Execute(int index)
         {
-            Spline.Evaluate(index / (Positions.Length - 1f), out var p, out var t, out var n);
+            Spline.Evaluate(index / (Positions.Length - 1f), out var p, out var t);
             Positions[index] = p;
             Tangents[index] = t;
-            Normals[index] = n;
         }
     }
 
@@ -152,11 +145,10 @@ namespace UnityEngine.BSplines
         public static void EvaluatePositionTangentNormal<T>(
             T spline,
             NativeArray<float3> positions,
-            NativeArray<float3> tangents,
-            NativeArray<float3> normals) where T : ISpline
+            NativeArray<float3> tangents) where T : ISpline
         {
             using var native = new NativeSpline(spline, Allocator.TempJob);
-            EvaluatePositionTangentNormal(native, positions, tangents, normals);
+            EvaluatePositionTangentNormal(native, positions, tangents);
         }
 
         /// <summary>
@@ -176,15 +168,13 @@ namespace UnityEngine.BSplines
         /// from a spline. Must be the same size as the positions array.</param>
         public static void EvaluatePositionTangentNormal(NativeSpline spline,
             NativeArray<float3> positions,
-            NativeArray<float3> tangents,
-            NativeArray<float3> normals)
+            NativeArray<float3> tangents)
         {
             var job = new GetPositionTangentNormal()
             {
                 Spline = spline,
                 Positions = positions,
-                Tangents = tangents,
-                Normals = normals
+                Tangents = tangents
             };
 
             var handle = job.Schedule(positions.Length, 1);

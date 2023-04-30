@@ -60,23 +60,18 @@ namespace UnityEngine.BSplines
         /// </summary>
         public bool Closed => false;
 
-        static BezierKnot FlipTangents(BezierKnot knot) =>
-            new BezierKnot(knot.Position, knot.TangentOut, knot.TangentIn, knot.Rotation);
-
         /// <summary>
         /// Get a <see cref="BezierKnot"/> at the zero-based index of this <see cref="SplineSlice{T}"/>.
         /// </summary>
         /// <param name="index">The index to get.</param>
-        public BezierKnot this[int index]
+        public ControlPoint this[int index]
         {
             get
             {
                 int indexFromRange = Range[index];
                 indexFromRange = (indexFromRange + Spline.Count) % Spline.Count;
 
-                return Range.Direction == SliceDirection.Backward
-                   ? FlipTangents(Spline[indexFromRange]).Transform(Transform)
-                   : Spline[indexFromRange].Transform(Transform);
+                return Spline[indexFromRange].Transform(Transform);
             }
         }
 
@@ -85,7 +80,7 @@ namespace UnityEngine.BSplines
         /// increment or decrement indices depending on the value of the <see cref="SplineRange.Direction"/>.
         /// </summary>
         /// <returns>An IEnumerator that is used to iterate the <see cref="BezierKnot"/> collection.</returns>
-        public IEnumerator<BezierKnot> GetEnumerator()
+        public IEnumerator<ControlPoint> GetEnumerator()
         {
             for (int i = 0, c = Range.Count; i < c; ++i)
                 yield return this[i];
@@ -154,13 +149,25 @@ namespace UnityEngine.BSplines
         /// <returns>
         /// A <see cref="BezierCurve"/> formed by the knot at index and the next knot.
         /// </returns>
-        public BezierCurve GetCurve(int index)
+        public BSplineCurve GetCurve(int index)
         {
-            int bi = math.min(math.max(index + 1, 0), Range.Count-1);
-            BezierKnot a = this[index], b = this[bi];
-            if (index == bi)
-                return new BezierCurve(a.Position, b.Position);
-            return new BezierCurve(a, b);
+            var points = GetCurveControlPoints(index);
+
+            return new BSplineCurve(points.p0, points.p1, points.p2, points.p3);
+        }
+
+        public (ControlPoint p0, ControlPoint p1, ControlPoint p2, ControlPoint p3) GetCurveControlPoints(int index)
+        {
+            int indexFromRange = Range[index];
+            indexFromRange = (indexFromRange + Spline.Count) % Spline.Count;
+
+            var points = Spline.GetCurveControlPoints(indexFromRange);
+            points.p0 = points.p0.Transform(Transform);
+            points.p1 = points.p1.Transform(Transform);
+            points.p2 = points.p2.Transform(Transform);
+            points.p3 = points.p3.Transform(Transform);
+
+            return points;
         }
 
         /// <summary>

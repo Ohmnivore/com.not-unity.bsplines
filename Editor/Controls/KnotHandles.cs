@@ -152,7 +152,7 @@ namespace UnityEditor.BSplines
                 return;
 
             foreach (var knotInfo in s_Knots)
-                Draw(knotInfo.knot.Position, knotInfo.knot.Rotation, knotInfo.knotColor, knotInfo.selected, knotInfo.hovered, knotInfo.discColor, k_KnotRotDiscWidthHover, knotInfo.linkedKnot);
+                Draw(knotInfo.knot.Position, Quaternion.identity, knotInfo.knotColor, knotInfo.selected, knotInfo.hovered, knotInfo.discColor, k_KnotRotDiscWidthHover, knotInfo.linkedKnot);
         }
 
         static void DrawKnotIndices(SelectableKnot knot)
@@ -197,7 +197,7 @@ namespace UnityEditor.BSplines
             if(!mainKnot.Equals(knot))
                 return;
 
-            Draw(knot.Position, knot.Rotation, knotColor, selected, hovered, knotColor, k_KnotRotDiscWidthDefault, k_KnotBuffer.Count != 1);
+            Draw(knot.Position, Quaternion.identity, knotColor, selected, hovered, knotColor, k_KnotRotDiscWidthDefault, k_KnotBuffer.Count != 1);
         }
 
         internal static void Draw(Vector3 position, Quaternion rotation, Color knotColor, bool selected, bool hovered)
@@ -251,7 +251,7 @@ namespace UnityEditor.BSplines
         {
             var position = knot.Position;
             var size = HandleUtility.GetHandleSize(position);
-            using(new Handles.DrawingScope(knotColor, Matrix4x4.TRS(position, knot.Rotation, Vector3.one)))
+            using(new Handles.DrawingScope(knotColor, Matrix4x4.TRS(position, Quaternion.identity, Vector3.one)))
             {
                 Handles.DrawSolidDisc(Vector3.zero, Vector3.up, size * SplineHandleUtility.knotDiscRadiusFactorSelected * sizeFactor);
             }
@@ -291,24 +291,14 @@ namespace UnityEditor.BSplines
 
         static void DrawKnotShape(float size, bool selected, bool linkedKnots)
         {
-            if (!linkedKnots)
+            // Knot disc
+            if (selected)
             {
-                UpdateHandlePoints(size);
-                Handles.DrawAAPolyLine(SplineHandleUtility.denseLineAATex, k_KnotHandleWidth, k_HandlePoints);
-                if (selected)
-                    Handles.DrawAAConvexPolygon(k_HandlePoints);
+                var radius = selected ? SplineHandleUtility.knotDiscRadiusFactorSelected : SplineHandleUtility.knotDiscRadiusFactorHover;
+                Handles.DrawSolidDisc(Vector3.zero, Vector3.up, radius * size);
             }
             else
-            {
-                // Knot disc
-                if (selected)
-                {
-                    var radius = selected ? SplineHandleUtility.knotDiscRadiusFactorSelected : SplineHandleUtility.knotDiscRadiusFactorHover;
-                    Handles.DrawSolidDisc(Vector3.zero, Vector3.up, radius * size);
-                }
-                else
-                    Handles.DrawWireDisc(Vector3.zero, Vector3.up, SplineHandleUtility.knotDiscRadiusFactorDefault * size, SplineHandleUtility.handleWidth * SplineHandleUtility.aliasedLineSizeMultiplier);
-            }
+                Handles.DrawWireDisc(Vector3.zero, Vector3.up, SplineHandleUtility.knotDiscRadiusFactorDefault * size, SplineHandleUtility.handleWidth * SplineHandleUtility.aliasedLineSizeMultiplier);
 
             Handles.DrawAAPolyLine(Vector3.zero, Vector3.up * 2f * SplineHandleUtility.sizeFactor * size);
         }

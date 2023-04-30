@@ -46,6 +46,8 @@ namespace UnityEditor.BSplines
             // Draw the spline elements.
             for (int i = 0; i < splines.Count; ++i)
                 DrawSplineElements(splines[i]);
+            for (int i = 0; i < splines.Count; ++i)
+                DrawSplineControlPolygon(splines[i]);
             //Drawing knots on top of all other elements and above other splines
             KnotHandles.DrawVisibleKnots();
 
@@ -127,30 +129,6 @@ namespace UnityEditor.BSplines
                     k_TangentChildIDs.Clear();
                     var knot = new SelectableKnot(splineInfo, knotIndex);
 
-                    if (SplineUtility.AreTangentsModifiable(splineInfo.Spline.GetTangentMode(knotIndex)))
-                    {
-                        var tangentIn = new SelectableTangent(splineInfo, knotIndex, BezierTangent.In);
-                        var tangentOut = new SelectableTangent(splineInfo, knotIndex, BezierTangent.Out);
-
-                        var controlIdIn = GUIUtility.GetControlID(FocusType.Passive);
-                        var controlIdOut = GUIUtility.GetControlID(FocusType.Passive);
-                        // Tangent In
-                        if (GUIUtility.hotControl == controlIdIn || SplineHandleUtility.ShouldShowTangent(tangentIn) && (spline.Closed || knotIndex != 0))
-                        {
-                            SelectionHandle(controlIdIn, tangentIn);
-                            k_TangentChildIDs.Add(controlIdIn);
-                            TangentHandles.Draw(controlIdIn, tangentIn);
-                        }
-
-                        // Tangent Out
-                        if (GUIUtility.hotControl == controlIdOut || SplineHandleUtility.ShouldShowTangent(tangentOut) && (spline.Closed || knotIndex + 1 != spline.Count))
-                        {
-                            SelectionHandle(controlIdOut, tangentOut);
-                            k_TangentChildIDs.Add(controlIdOut);
-                            TangentHandles.Draw(controlIdOut, tangentOut);
-                        }
-                    }
-
                     var id = GetKnotID(knot);
                     SelectionHandle(id, knot);
                     KnotHandles.Draw(id, knot);
@@ -163,6 +141,28 @@ namespace UnityEditor.BSplines
                     var knot = new SelectableKnot(splineInfo, knotIndex);
                     KnotHandles.DrawInformativeKnot(knot);
                 }
+            }
+        }
+
+        internal static void DrawSplineControlPolygon(SplineInfo splineInfo)
+        {
+            var spline = splineInfo.Spline;
+
+            var kc = spline.Count - 1;
+            if (spline.Closed)
+                kc++;
+
+            for (int knotIndex = 0; knotIndex < kc; ++knotIndex)
+            {
+                var wrappedIndex = (knotIndex + 1) % spline.Count;
+
+                var a = new SelectableKnot(splineInfo, knotIndex);
+                var b = new SelectableKnot(splineInfo, wrappedIndex);
+
+                var colors = new Color[] { Handles.elementColor, Handles.elementColor };
+                var positions = new Vector3[] { a.Position, b.Position };
+
+                Handles.DrawAAPolyLine(colors, positions);
             }
         }
 
@@ -203,7 +203,7 @@ namespace UnityEditor.BSplines
                         GUIUtility.hotControl = id;
                         evt.Use();
 
-                        DirectManipulation.BeginDrag(element.Position, EditorSplineUtility.GetElementRotation(element));
+                        DirectManipulation.BeginDrag(element.Position, Quaternion.identity);
                     }
                     break;
 
@@ -213,10 +213,7 @@ namespace UnityEditor.BSplines
                         EditorSplineUtility.RecordObject(element.SplineInfo, "Move Knot");
                         var pos = TransformOperation.ApplySmartRounding(DirectManipulation.UpdateDrag(id));
 
-                        if (element is SelectableTangent tangent)
-                            EditorSplineUtility.ApplyPositionToTangent(tangent, pos);
-                        else
-                            element.Position = pos;
+                        element.Position = pos;
 
                         evt.Use();
                     }
@@ -264,13 +261,13 @@ namespace UnityEditor.BSplines
         /// Draws a handle for a <see cref="BezierCurve"/>.
         /// </summary>
         /// <param name="curve">The <see cref="BezierCurve"/> to create handles for.</param>
-        public static void DoCurve(BezierCurve curve) => CurveHandles.Draw(-1, curve);
+        public static void DoCurve(BSplineCurve curve) => CurveHandles.Draw(-1, curve);
 
         /// <summary>
         /// Draws a handle for a <see cref="BezierCurve"/>.
         /// </summary>
         /// <param name="controlID">The spline mesh controlID.</param>
         /// <param name="curve">The <see cref="BezierCurve"/> to create handles for.</param>
-        public static void DoCurve(int controlID, BezierCurve curve) => CurveHandles.Draw(controlID, curve);
+        public static void DoCurve(int controlID, BSplineCurve curve) => CurveHandles.Draw(controlID, curve);
     }
 }

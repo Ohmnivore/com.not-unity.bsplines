@@ -19,7 +19,7 @@ namespace UnityEditor.BSplines
         /// </summary>
         /// <param name="controlID">The controlID of the curve to create highlights for.</param>
         /// <param name="curve">The <see cref="BezierCurve"/> to create handles for.</param>
-        public static void Draw(int controlID, BezierCurve curve)
+        public static void Draw(int controlID, BSplineCurve curve)
         {
             if(Event.current.type == EventType.Repaint)
                 Draw(controlID, curve, false, true);
@@ -30,7 +30,7 @@ namespace UnityEditor.BSplines
         /// </summary>
         /// <param name="curve">The <see cref="BezierCurve"/> to create handles for.</param>
         /// <param name="activeSpline">Whether the curve is part of the active spline.</param>
-        internal static void Draw(BezierCurve curve, bool activeSpline)
+        internal static void Draw(BSplineCurve curve, bool activeSpline)
         {
             if(Event.current.type == EventType.Repaint)
                 Draw(0, curve, false, activeSpline);
@@ -48,7 +48,7 @@ namespace UnityEditor.BSplines
         /// <param name="activeSpline">Whether the curve is part of the active spline.</param>
         internal static void DrawWithHighlight(
             int controlID,
-            BezierCurve curve,
+            BSplineCurve curve,
             ISpline spline,
             int curveIndex,
             SelectableKnot knotA,
@@ -117,7 +117,7 @@ namespace UnityEditor.BSplines
         /// <param name="activeSpline">Whether the curve is part of the active spline.</param>
         internal static void DrawWithoutHighlight(
             int controlID,
-            BezierCurve curve,
+            BSplineCurve curve,
             ISpline spline,
             int curveIndex,
             SelectableKnot knotA,
@@ -130,7 +130,7 @@ namespace UnityEditor.BSplines
                 case EventType.Repaint:
                     Draw(controlID, curve, false, activeSpline);
                     if (SplineHandleSettings.FlowDirectionEnabled && activeSpline)
-                        DrawFlow(curve, spline, curveIndex, math.rotate(knotA.Rotation, math.up()), math.rotate(knotB.Rotation, math.up()));
+                        DrawFlow(curve, spline, curveIndex, Vector3.up, Vector3.up);
                     break;
             }
         }
@@ -143,7 +143,7 @@ namespace UnityEditor.BSplines
         /// <param name="curveIndex">The curve's index if it belongs to a spline - otherwise -1.</param>
         /// <param name="upAtStart">The up vector at the start of the curve.</param>
         /// <param name="upAtEnd">The up vector at the end of the curve.</param>
-        internal static void DrawFlow(BezierCurve curve, ISpline spline, int curveIndex, Vector3 upAtStart, Vector3 upAtEnd)
+        internal static void DrawFlow(BSplineCurve curve, ISpline spline, int curveIndex, Vector3 upAtStart, Vector3 upAtEnd)
         {
             if(Event.current.type != EventType.Repaint)
                 return;
@@ -167,14 +167,14 @@ namespace UnityEditor.BSplines
             }
         }
 
-        public static (Vector3 pointA, Vector3 pointB, Vector3 pointC, Matrix4x4 transform) GetFlowArrowData(BezierCurve curve, float t, Vector3 upAtStart, Vector3 upAtEnd, float sizeMultiplier = 1f)
+        public static (Vector3 pointA, Vector3 pointB, Vector3 pointC, Matrix4x4 transform) GetFlowArrowData(BSplineCurve curve, float t, Vector3 upAtStart, Vector3 upAtEnd, float sizeMultiplier = 1f)
         {
             var position = (Vector3)CurveUtility.EvaluatePosition(curve, t);
             var tangent = ((Vector3)CurveUtility.EvaluateTangent(curve, t)).normalized;
-            var up = CurveUtility.EvaluateUpVector(curve, t, upAtStart, upAtEnd);
+            var up = Vector3.up;
             var rotation = Quaternion.LookRotation(tangent, up);
 
-            var arrowMaxSpline = .05f * CurveUtility.ApproximateLength(curve);
+            var arrowMaxSpline = .05f * CurveUtility.CalculateLength(curve);
             var size = HandleUtility.GetHandleSize(position) * .5f * sizeMultiplier;
 
             tangent = new Vector3(0, 0, .1f) * size;
@@ -195,7 +195,7 @@ namespace UnityEditor.BSplines
             return (pointA: a, pointB: b, pointC: c, transform: Matrix4x4.TRS(position, rotation, Vector3.one));
         }
 
-        static void Draw(int controlID, BezierCurve curve, bool preview, bool activeSpline)
+        static void Draw(int controlID, BSplineCurve curve, bool preview, bool activeSpline)
         {
             var evt = Event.current;
 
@@ -235,7 +235,7 @@ namespace UnityEditor.BSplines
             }
         }
 
-        static void FillCurveDrawingBuffer(BezierCurve curve)
+        static void FillCurveDrawingBuffer(BSplineCurve curve)
         {
             const float segmentPercentage = 1f / k_CurveDrawResolution;
             for (int i = 0; i <= k_CurveDrawResolution; ++i)
@@ -244,7 +244,7 @@ namespace UnityEditor.BSplines
             }
         }
 
-        internal static float DistanceToCurve(BezierCurve curve)
+        internal static float DistanceToCurve(BSplineCurve curve)
         {
             FillCurveDrawingBuffer(curve);
             return DistanceToCurve();
@@ -271,13 +271,13 @@ namespace UnityEditor.BSplines
         /// <param name="spline">The ISpline that curve belongs to. Not used if curve is not part of any spline.</param>
         /// <param name="curveIndex">The index of the curve if it's part of the spine.</param>
         /// <typeparam name="T">A type implementing ISpline.</typeparam>
-        internal static float GetCurveMiddleInterpolation<T>(BezierCurve curve, T spline, int curveIndex) where T: ISpline
+        internal static float GetCurveMiddleInterpolation<T>(BSplineCurve curve, T spline, int curveIndex) where T: ISpline
         {
             var curveMidT = 0f;
             if (curveIndex >= 0)
                 curveMidT = spline.GetCurveInterpolation(curveIndex, spline.GetCurveLength(curveIndex) * 0.5f);
             else
-                curveMidT = CurveUtility.GetDistanceToInterpolation(curve, CurveUtility.ApproximateLength(curve) * 0.5f);
+                curveMidT = CurveUtility.GetDistanceToInterpolation(curve, CurveUtility.CalculateLength(curve) * 0.5f);
 
             return curveMidT;
         }
@@ -308,7 +308,7 @@ namespace UnityEditor.BSplines
             }
         }
 
-        static void DrawCurveHighlight(BezierCurve curve, float startT, float endT)
+        static void DrawCurveHighlight(BSplineCurve curve, float startT, float endT)
         {
             FillCurveDrawingBuffer(curve);
 
@@ -356,7 +356,7 @@ namespace UnityEditor.BSplines
         /// </summary>
         /// <param name="curve">The <see cref="BezierCurve"/> to create control points for.</param>
 
-        public static void DrawControlNet(BezierCurve curve)
+        public static void DrawControlNet(BSplineCurve curve)
         {
             Handles.color = Color.green;
             Handles.DotHandleCap(-1, curve.P0, Quaternion.identity, HandleUtility.GetHandleSize(curve.P0) * .04f, Event.current.type);

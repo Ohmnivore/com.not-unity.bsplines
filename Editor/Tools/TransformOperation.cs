@@ -21,16 +21,12 @@ namespace UnityEditor.BSplines
         struct TransformData
         {
             internal float3 position;
-            internal float3 inTangentDirection;
-            internal float3 outTangentDirection;
 
             internal static TransformData GetData(ISplineElement element)
             {
                 var tData = new TransformData();
                 tData.position = new float3(element.Position);
                 var knot = new SelectableKnot(element.SplineInfo, element.KnotIndex);
-                tData.inTangentDirection = knot.TangentIn.Direction;
-                tData.outTangentDirection = knot.TangentOut.Direction;
 
                 return tData;
             }
@@ -125,10 +121,7 @@ namespace UnityEditor.BSplines
                         goto default;
 
                     var element = s_ElementSelection[0];
-                    if (useKnotPositionForTangents && element is SelectableTangent tangent)
-                        s_PivotPosition = tangent.Owner.Position;
-                    else
-                        s_PivotPosition = element.Position;
+                    s_PivotPosition = element.Position;
                     break;
 
                 default:
@@ -150,15 +143,6 @@ namespace UnityEditor.BSplines
                 return;
 
             var handleRotation = Tools.handleRotation;
-            if (canManipulate && (SplineTool.handleOrientation == HandleOrientation.Element || SplineTool.handleOrientation == HandleOrientation.Parent))
-            {
-                var curElement = TransformOperation.currentElementSelected;
-
-                if (SplineTool.handleOrientation == HandleOrientation.Element)
-                    handleRotation = EditorSplineUtility.GetElementRotation(curElement);
-                else if (curElement is SelectableTangent editableTangent)
-                    handleRotation = EditorSplineUtility.GetElementRotation(editableTangent.Owner);
-            }
 
             s_HandleRotation = handleRotation;
             s_HandleRotationInv = math.inverse(s_HandleRotation);
@@ -185,171 +169,9 @@ namespace UnityEditor.BSplines
                             s_RotationSyncData.Initialize(quaternion.identity, 0f, 1f);
                     }
                 }
-                else if (element is SelectableTangent tangent)
-                {
-                    knot = tangent.Owner;
-                    //Do nothing on the tangent if the knot is also in the selection
-                    if (s_ElementSelection.Contains(knot))
-                        continue;
-
-                    if (OppositeTangentSelected(tangent))
-                        knot.Mode = TangentMode.Broken;
-
-                    if (knot.Mode == TangentMode.Broken)
-                        tangent.Position = ApplySmartRounding(knot.Position + tangent.Direction + delta);
-                    else
-                    {
-                        if (s_RotatedKnotCache.Contains(knot))
-                            continue;
-                        
-                        // Build rotation sync data based on active selection's transformation
-                        if (!s_RotationSyncData.initialized)
-                        {
-                            var newTangentPosWorld = knot.Position + tangent.Direction + delta;
-                            var deltas = CalculateMirroredTangentTranslationDeltas(tangent, newTangentPosWorld);
-                            
-                            s_RotationSyncData.Initialize(deltas.knotRotationDelta, deltas.tangentLocalMagnitudeDelta, 1f);
-                        }
-                        ApplyTangentRotationSyncTransform(tangent);
-                    }
-                }
             }
 
             s_RotationSyncData.Clear();
-        }
-        
-        public static void ApplyRotation(Quaternion deltaRotation, float3 rotationCenter)
-        {
-            s_RotatedKnotCache.Clear();
-
-            foreach (var element in s_ElementSelection)
-            {
-                if (element is SelectableKnot knot)
-                {
-                    var knotRotation = knot.Rotation;
-                    RotateKnot(knot, deltaRotation, rotationCenter);
-                    if (!s_RotationSyncData.initialized)
-                        s_RotationSyncData.Initialize(math.mul(math.inverse(knotRotation), knot.Rotation), 0f, 1f);
-                }
-                else if (element is SelectableTangent tangent && !s_ElementSelection.Contains(tangent.Owner))
-                {
-                    knot = tangent.Owner;
-                    if (knot.Mode == TangentMode.Broken)
-                    {
-                        if (Tools.pivotMode == PivotMode.Pivot)
-                            rotationCenter = knot.Position;
-
-                        var mode = knot.Mode;
-
-                        var deltaPos = math.rotate(deltaRotation, tangent.Position - rotationCenter);
-                        tangent.Position = deltaPos + rotationCenter;
-                    }
-                    else
-                    {
-                        if (s_RotatedKnotCache.Contains(tangent.Owner))
-                            continue;
-
-                        deltaRotation.ToAngleAxis(out var deltaRotationAngle, out var deltaRotationAxis);
-
-                        if (math.abs(deltaRotationAngle) > 0f)
-                        {
-                            if (knot.Mode != TangentMode.Broken)
-                            {
-                                // If we're in center pivotMode and both tangents of the same knot are in selection, enter Broken mode under these conditions:
-                                if (Tools.pivotMode == PivotMode.Center && OppositeTangentSelected(tangent))
-                                {
-                                    var knotToCenter = (float3) rotationCenter - knot.Position;
-                                    // 1) Rotation center does not match owner knot's position
-                                    if (!Mathf.Approximately(math.length(knotToCenter), 0f))
-                                    {
-                                        var similarity = Math.Abs(Vector3.Dot(math.normalize(deltaRotationAxis),
-                                            math.normalize(knotToCenter)));
-                                        // 2) Both rotation center and knot, are not on rotation delta's axis
-                                        if (!Mathf.Approximately(similarity, 1f))
-                                            knot.Mode = TangentMode.Broken;
-                                    }
-                                }
-                            }
-
-                            // Build rotation sync data based on active selection's transformation
-                            if (!s_RotationSyncData.initialized)
-                            {
-                                if (Tools.pivotMode == PivotMode.Pivot)
-                                    s_RotationSyncData.Initialize(deltaRotation, 0f, 1f);
-                                else
-                                {
-                                    var deltaPos = math.rotate(deltaRotation, tangent.Position - rotationCenter);
-                                    var knotToRotationCenter = rotationCenter - tangent.Owner.Position;
-                                    var targetDirection = knotToRotationCenter + deltaPos;
-                                    var tangentNorm = math.normalize(tangent.Direction);
-                                    var axisDotTangent = math.dot(math.normalize(deltaRotationAxis), tangentNorm);
-                                    var toRotCenterDotTangent = math.length(knotToRotationCenter) > 0f
-                                        ? math.dot(math.normalize(knotToRotationCenter), tangentNorm)
-                                        : 1f;
-                                    quaternion knotRotationDelta;
-                                    // In center pivotMode, use handle delta only if our handle delta rotation's axis
-                                    // matches knot's active selection tangent direction and rotation center is on the tangent's axis.
-                                    // This makes knot roll possible when element selection list only contains one or both tangents of a single knot.
-                                    if (Mathf.Approximately(math.abs(axisDotTangent), 1f) &&
-                                        Mathf.Approximately(math.abs(toRotCenterDotTangent), 1f))
-                                        knotRotationDelta = deltaRotation;
-                                    else
-                                        knotRotationDelta = Quaternion.FromToRotation(tangent.Direction, targetDirection);
-
-                                    var scaleMultiplier = math.length(targetDirection) / math.length(tangent.Direction);
-
-                                    s_RotationSyncData.Initialize(knotRotationDelta, 0f, scaleMultiplier);
-                                }
-                            }
-
-                            ApplyTangentRotationSyncTransform(tangent, false);
-                        }
-                    }
-                }
-            }
-
-            s_RotationSyncData.Clear();
-        }
-
-        static bool OppositeTangentSelected(SelectableTangent tangent)
-        {
-            if (tangent.Owner.Mode != TangentMode.Broken)
-                if (s_ElementSelection.Contains(tangent.OppositeTangent))
-                    return true;
-
-            return false;
-        }
-
-        static void RotateKnot(SelectableKnot knot, quaternion deltaRotation, float3 rotationCenter, bool allowTranslation = true)
-        {
-            var knotInBrokenMode = knot.Mode == TangentMode.Broken;
-            if (!knotInBrokenMode && s_RotatedKnotCache.Contains(knot))
-                return;
-
-            if (allowTranslation && Tools.pivotMode == PivotMode.Center)
-            {
-                var dir = knot.Position - rotationCenter;
-
-                if (SplineTool.handleOrientation == HandleOrientation.Element || SplineTool.handleOrientation == HandleOrientation.Parent)
-                    knot.Position = math.rotate(deltaRotation, dir) + rotationCenter;
-                else
-                    knot.Position = math.rotate(s_HandleRotation, math.rotate(deltaRotation, math.rotate(s_HandleRotationInv, dir))) + rotationCenter;
-            }
-
-            if (SplineTool.handleOrientation == HandleOrientation.Element || SplineTool.handleOrientation == HandleOrientation.Parent)
-            {
-                if (Tools.pivotMode == PivotMode.Center)
-                    knot.Rotation = math.mul(deltaRotation, knot.Rotation);
-                else
-                {
-                    var handlePivotModeRot = math.mul(GetCurrentSelectionKnot().Rotation, math.inverse(knot.Rotation));
-                    knot.Rotation = math.mul(math.inverse(handlePivotModeRot), math.mul(deltaRotation, math.mul(handlePivotModeRot, knot.Rotation)));
-                }
-            }
-            else
-                knot.Rotation = math.mul(s_HandleRotation, math.mul(deltaRotation, math.mul(s_HandleRotationInv, knot.Rotation)));
-
-            s_RotatedKnotCache.Add(knot);
         }
 
         public static void ApplyScale(float3 scale)
@@ -367,59 +189,6 @@ namespace UnityEditor.BSplines
                     if (!s_RotationSyncData.initialized)
                         s_RotationSyncData.Initialize(quaternion.identity, 0f, 1f);
                 }
-                else if (element is SelectableTangent tangent && !s_ElementSelection.Contains(tangent.Owner))
-                {
-                    var owner = tangent.Owner;
-                    var restoreMode = false;
-                    var mode = owner.Mode;
-                    var scaleDelta = scale - new float3(1f, 1f, 1f);
-                    if (mode != TangentMode.Broken && math.length(scaleDelta) > 0f)
-                    {
-                        // If we're in center pivotMode and both tangents of the same knot are in selection
-                        if (Tools.pivotMode == PivotMode.Center && OppositeTangentSelected(tangent))
-                        {
-                            var knotToCenter = (float3) pivotPosition - owner.Position;
-                            //  Enter broken mode if scale operation center does not match owner knot's position
-                            if (!Mathf.Approximately(math.length(knotToCenter), 0f))
-                            {
-                                owner.Mode = TangentMode.Broken;
-                                var similarity = Math.Abs(Vector3.Dot(math.normalize(scaleDelta),
-                                    math.normalize(knotToCenter)));
-                                // If scale center and knot are both on an axis that's orthogonal to scale operation's axis,
-                                // mark knot for mode restore so that mirrored/continous modes can be restored
-                                if (Mathf.Approximately(similarity, 0f))
-                                    restoreMode = true;
-                            }
-                        }
-                    }
-
-                    var index = Array.IndexOf(scaledElements, element);
-                    if (index == -1) //element not scaled yet
-                    {
-                        if (owner.Mode == TangentMode.Broken)
-                            tangent.Position = ScaleTangent(tangent, s_MouseDownData[elementIndex].position, scale);
-                        else
-                        {
-                            // Build rotation sync data based on active selection's transformation
-                            if (!s_RotationSyncData.initialized)
-                            {
-                                var newTangentPosWorld = ScaleTangent(tangent, s_MouseDownData[elementIndex].position, scale);
-                                var deltas = CalculateMirroredTangentTranslationDeltas(tangent, newTangentPosWorld);
-                                var scaleMultiplier = 1f + deltas.tangentLocalMagnitudeDelta / math.length(tangent.LocalDirection);
-
-                                s_RotationSyncData.Initialize(deltas.knotRotationDelta, 0f, scaleMultiplier);
-                            }
-
-                            if (owner.Mode == TangentMode.Mirrored && s_RotatedKnotCache.Contains(owner))
-                                continue;
-
-                            ApplyTangentRotationSyncTransform(tangent, false);
-                        }
-
-                        if (restoreMode)
-                            owner.Mode = mode;
-                    }
-                }
 
                 scaledElements[elementIndex] = element;
             }
@@ -436,77 +205,12 @@ namespace UnityEditor.BSplines
                 var deltaPosKnot = deltaPos * scale;
                 knot.Position = math.rotate(s_HandleRotation, deltaPosKnot) + (float3) pivotPosition;
             }
-
-            var tangent = knot.TangentIn;
-            tangent.Direction = math.rotate(s_HandleRotation, math.rotate(s_HandleRotationInv, s_MouseDownData[dataIndex].inTangentDirection) * scale);
-            tangent = knot.TangentOut;
-            tangent.Direction = math.rotate(s_HandleRotation, math.rotate(s_HandleRotationInv, s_MouseDownData[dataIndex].outTangentDirection) * scale);
-        }
-
-        static float3 ScaleTangent(SelectableTangent tangent, float3 originalPosition, float3 scale)
-        {
-            var scaleCenter = Tools.pivotMode == PivotMode.Center ? (float3) pivotPosition : tangent.Owner.Position;
-
-            var deltaPos = math.rotate(s_HandleRotationInv, originalPosition - scaleCenter) * scale;
-            return math.rotate(s_HandleRotation, deltaPos) + scaleCenter;
-        }
-
-        static void ApplyTangentRotationSyncTransform(SelectableTangent tangent, bool absoluteScale = true)
-        {
-            if (tangent.Equals(currentElementSelected) ||
-                tangent.Owner.Mode == TangentMode.Mirrored ||
-                (!absoluteScale && tangent.Owner.Mode == TangentMode.Continuous))
-            {
-                if (absoluteScale)
-                {
-                    var localDirection = tangent.LocalDirection;
-                    if (Mathf.Approximately(math.length(localDirection), 0f))
-                        localDirection = new float3(0, 0, 1f);
-                    
-                    tangent.LocalDirection += math.normalizesafe(localDirection) * s_RotationSyncData.magnitudeDelta;
-                }
-                else
-                    tangent.LocalDirection *=  s_RotationSyncData.scaleMultiplier;
-            }
-
-            RotateKnot(tangent.Owner, s_RotationSyncData.rotationDelta, tangent.Owner.Position, false);
-        }
-
-        /*
-         Given a mirrored tangent and a target position, calculate the knot rotation delta and tangent's local magnitude change required to 
-         put the tangent into target world position while fully respecting the owner spline's transformation (including non-uniform scale).
-         */
-        internal static (quaternion knotRotationDelta, float tangentLocalMagnitudeDelta) CalculateMirroredTangentTranslationDeltas(SelectableTangent tangent, float3 targetPosition)
-        {
-            var knot = tangent.Owner;
-            var splineTrsInv = math.inverse(knot.SplineInfo.LocalToWorld);
-            var splineTrs = knot.SplineInfo.LocalToWorld;
-            var splinePos = splineTrs.c3.xyz;
-            var splineRotation = new quaternion(splineTrs);
-
-            var unscaledTargetPos = splinePos + math.rotate(splineRotation, math.transform(splineTrsInv, targetPosition));
-            var unscaledCurrentPos = splinePos + math.rotate(splineRotation, math.transform(splineTrsInv, tangent.Position));
-            var unscaledKnotPos = splinePos + math.rotate(splineRotation, math.transform(splineTrsInv, knot.Position));
-
-            var knotRotationInv = math.inverse(knot.Rotation);
-            var forward = (tangent.TangentIndex == 0 ? -1f : 1f) * math.normalizesafe(unscaledTargetPos - unscaledKnotPos);
-            var up = math.mul(knot.Rotation, math.up());
-            var knotLookAtRotation = quaternion.LookRotationSafe(forward, up);
-            var knotRotationDelta = math.mul(knotLookAtRotation, knotRotationInv);
-
-            var targetLocalDirection = math.rotate(knotRotationInv, (unscaledTargetPos - unscaledKnotPos));
-            var tangentLocalMagnitudeDelta = math.length(targetLocalDirection) - math.length(tangent.LocalDirection);
-
-            return (knotRotationDelta, tangentLocalMagnitudeDelta);
         }
 
         static SelectableKnot GetCurrentSelectionKnot()
         {
             if (currentElementSelected == null)
                 return default;
-
-            if (currentElementSelected is SelectableTangent tangent)
-                return tangent.Owner;
 
             if (currentElementSelected is SelectableKnot knot)
                 return knot;

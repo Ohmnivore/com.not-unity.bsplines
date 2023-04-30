@@ -9,15 +9,6 @@ namespace UnityEditor.BSplines
     {
         static readonly List<SelectableKnot> s_KnotBuffer = new List<SelectableKnot>();
 
-        internal static void ValidateTangentSelection(SelectableKnot knot)
-        {
-            if (!SplineUtility.AreTangentsModifiable(knot.Mode))
-            {
-                SplineSelection.Remove(knot.TangentIn);
-                SplineSelection.Remove(knot.TangentOut);
-            }
-        }
-
         internal static void HandleSelection<T>(T element, bool addLinkedKnots = true)
             where T : struct, ISplineElement
         {
@@ -128,30 +119,8 @@ namespace UnityEditor.BSplines
             return activeKnot;
         }
 
-        internal static bool IsSelectable(SelectableTangent tangent)
-        {
-            // Tangents should not be selectable if not modifiable
-            if(!SplineUtility.AreTangentsModifiable(tangent.Owner.Mode))
-                return false;
-
-            // For open splines, tangentIn of first knot and tangentOut of last knot should not be selectable
-            switch (tangent.TangentIndex)
-            {
-                case (int)BezierTangent.In:
-                    return tangent.KnotIndex != 0 || tangent.SplineInfo.Spline.Closed;
-
-                case (int)BezierTangent.Out:
-                    return tangent.KnotIndex != tangent.SplineInfo.Spline.Count - 1 || tangent.SplineInfo.Spline.Closed;
-            }
-
-            return true;
-        }
-
         internal static bool IsSelectable(ISplineElement element)
         {
-            if (element is SelectableTangent tangent)
-                return IsSelectable(tangent);
-
             return true;
         }
 

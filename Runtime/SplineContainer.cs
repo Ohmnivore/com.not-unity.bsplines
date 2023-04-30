@@ -193,10 +193,9 @@ namespace UnityEngine.BSplines
         /// <param name="t">A value between 0 and 1 representing the ratio along the curve.</param>
         /// <param name="position">The output variable for the float3 position at t.</param>
         /// <param name="tangent">The output variable for the float3 tangent at t.</param>
-        /// <param name="upVector">The output variable for the float3 up direction at t.</param>
         /// <returns>Boolean value, true if a valid set of output variables as been computed.</returns>
-        public bool Evaluate(float t, out float3 position, out float3 tangent, out float3 upVector)
-            => Evaluate(0, t, out position, out tangent, out upVector);
+        public bool Evaluate(float t, out float3 position, out float3 tangent)
+            => Evaluate(0, t, out position, out tangent);
 
         /// <summary>
         /// Computes the interpolated position, direction and upDirection at ratio t for the spline at index `splineIndex`. Calling this method to get the
@@ -207,10 +206,9 @@ namespace UnityEngine.BSplines
         /// <param name="t">A value between 0 and 1 that represents the ratio along the curve.</param>
         /// <param name="position">The output variable for the float3 position at t.</param>
         /// <param name="tangent">The output variable for the float3 tangent at t.</param>
-        /// <param name="upVector">The output variable for the float3 up direction at t.</param>
         /// <returns>True if a valid set of output variables is computed and false otherwise.</returns>
-        public bool Evaluate(int splineIndex, float t, out float3 position,  out float3 tangent,  out float3 upVector)
-            => Evaluate(Splines[splineIndex], t, out position, out tangent, out upVector);
+        public bool Evaluate(int splineIndex, float t, out float3 position,  out float3 tangent)
+            => Evaluate(Splines[splineIndex], t, out position, out tangent);
 
         /// <summary>
         /// Gets the interpolated position, direction, and upDirection at ratio t for a spline.  This method gets the three
@@ -222,30 +220,27 @@ namespace UnityEngine.BSplines
         /// <param name="t">A value between 0 and 1 that represents the ratio along the curve.</param>
         /// <param name="position">The output variable for the float3 position at t.</param>
         /// <param name="tangent">The output variable for the float3 tangent at t.</param>
-        /// <param name="upVector">The output variable for the float3 up direction at t.</param>
         /// <returns>True if a valid set of output variables is computed and false otherwise.</returns>
-        public bool Evaluate<T>(T spline, float t, out float3 position, out float3 tangent, out float3 upVector) where T : ISpline
+        public bool Evaluate<T>(T spline, float t, out float3 position, out float3 tangent) where T : ISpline
         {
             if (spline == null)
             {
                 position = float3.zero;
                 tangent = new float3(0, 0, 1);
-                upVector = new float3(0, 1, 0);
                 return false;
             }
 
             if (IsScaled)
             {
                 using var nativeSpline = new NativeSpline(spline, transform.localToWorldMatrix);
-                return SplineUtility.Evaluate(nativeSpline, t, out position, out tangent, out upVector);
+                return SplineUtility.Evaluate(nativeSpline, t, out position, out tangent);
             }
 
-            var evaluationStatus = SplineUtility.Evaluate(spline, t, out position, out tangent, out upVector);
+            var evaluationStatus = SplineUtility.Evaluate(spline, t, out position, out tangent);
             if (evaluationStatus)
             {
                 position = transform.TransformPoint(position);
                 tangent = transform.TransformVector(tangent);
-                upVector = transform.TransformDirection(upVector);
             }
 
             return evaluationStatus;
@@ -320,43 +315,6 @@ namespace UnityEngine.BSplines
                 return SplineUtility.EvaluateTangent(nativeSpline, t);
             }
             return transform.TransformVector(SplineUtility.EvaluateTangent(spline, t));
-        }
-
-        /// <summary>
-        /// Evaluates the up vector of a point, t, on a spline in world space.
-        /// </summary>
-        /// <param name="t">A value between 0 and 1 representing a percentage of entire spline.</param>
-        /// <returns>The computed up direction.</returns>
-        public float3 EvaluateUpVector(float t) => EvaluateUpVector(0, t);
-
-        /// <summary>
-        /// Evaluates the up vector of a point, t, on a spline at an index, `splineIndex`, in world space.
-        /// </summary>
-        /// <param name="splineIndex">The index of the Spline to evaluate.</param>
-        /// <param name="t">A value between 0 and 1 representing a percentage of entire spline.</param>
-        /// <returns>The computed up direction.</returns>
-        public float3 EvaluateUpVector(int splineIndex, float t) => EvaluateUpVector(Splines[splineIndex], t);
-
-        /// <summary>
-        /// Evaluates the up vector of a point, t, on a given spline, in world space.
-        /// </summary>
-        /// <typeparam name="T">The spline type.</typeparam>
-        /// <param name="spline">The Spline to evaluate.</param>
-        /// <param name="t">A value between 0 and 1 representing a percentage of entire spline.</param>
-        /// <returns>The computed up direction.</returns>
-        public float3 EvaluateUpVector<T>(T spline, float t) where T : ISpline
-        {
-            if (spline == null)
-                return float3.zero;
-
-            if (IsScaled)
-            {
-                using var nativeSpline = new NativeSpline(spline, transform.localToWorldMatrix);
-                return SplineUtility.EvaluateUpVector(nativeSpline, t);
-            }
-
-            //Using TransformDirection as up direction is not sensible to scale.
-            return transform.TransformDirection(SplineUtility.EvaluateUpVector(spline, t));
         }
 
 

@@ -41,10 +41,10 @@ namespace UnityEngine.BSplines
         /// </summary>
         Normalized,
         /// <summary>
-        /// The 't' value used when interpolating is defined by knot indices and a fractional value representing the
-        /// normalized interpolation between the specific knot index and the next knot.
+        /// The 't' value used when interpolating is defined by control point indices and a fractional value representing the
+        /// normalized interpolation between the specific point index and the point knot.
         /// </summary>
-        Knot
+        ControlPoint
     }
 
     // Used internally to try preserving index positioning for SplineData embedded in Spline class. It is not very
@@ -68,7 +68,7 @@ namespace UnityEngine.BSplines
         static readonly DataPointComparer<DataPoint<T>> k_DataPointComparer = new DataPointComparer<DataPoint<T>>();
 
         [SerializeField]
-        PathIndexUnit m_IndexUnit = PathIndexUnit.Knot;
+        PathIndexUnit m_IndexUnit = PathIndexUnit.ControlPoint;
 
         [SerializeField]
         T m_DefaultValue;
@@ -352,7 +352,7 @@ namespace UnityEngine.BSplines
             float splineLengthInIndexUnits = splineLength;
             if(m_IndexUnit == PathIndexUnit.Normalized)
                 splineLengthInIndexUnits = 1f;
-            else if(m_IndexUnit == PathIndexUnit.Knot)
+            else if(m_IndexUnit == PathIndexUnit.ControlPoint)
                 splineLengthInIndexUnits = closed ? knotCount : knotCount - 1;
 
             float maxDataPointTime = m_DataPoints[m_DataPoints.Count - 1].Index;
@@ -575,7 +575,7 @@ namespace UnityEngine.BSplines
         /// </remarks>
         void ISplineModificationHandler.OnSplineModified(SplineModificationData data)
         {
-            if (m_IndexUnit != PathIndexUnit.Knot)
+            if (m_IndexUnit != PathIndexUnit.ControlPoint)
                 return;
 
             if (data.Modification == SplineModification.KnotModified || data.Modification == SplineModification.KnotReordered || data.Modification == SplineModification.Default)

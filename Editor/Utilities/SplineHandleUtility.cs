@@ -109,17 +109,6 @@ namespace UnityEditor.BSplines
             get => s_ElementIdRange.y;
             set => s_ElementIdRange.y = value;
         }
-        
-        internal static bool ShouldShowTangent(SelectableTangent tangent)
-        {
-            if (!SplineSelectionUtility.IsSelectable(tangent) || Mathf.Approximately(math.length(tangent.LocalDirection), 0f))
-                return false;
-
-            if (SplineHandleSettings.ShowAllTangents)
-                return true;
-
-            return SplineSelection.IsSelectedOrAdjacentToSelected(tangent);
-        }
 
         internal static void ResetLastHoveredElement()
         {
@@ -270,12 +259,12 @@ namespace UnityEditor.BSplines
             return (float)Math.Round(valueToRound, numberOfDecimals, MidpointRounding.AwayFromZero);
         }
 
-        public static void GetNearestPointOnCurve(BezierCurve curve, out Vector3 position, out float t)
+        public static void GetNearestPointOnCurve(BSplineCurve curve, out Vector3 position, out float t)
         {
             GetNearestPointOnCurve(curve, out position, out t, out _);
         }
 
-        public static void GetNearestPointOnCurve(BezierCurve curve, out Vector3 position, out float t, out float distance)
+        public static void GetNearestPointOnCurve(BSplineCurve curve, out Vector3 position, out float t, out float distance)
         {
             Vector3 closestA = Vector3.zero;
             Vector3 closestB = Vector3.zero;
@@ -319,7 +308,7 @@ namespace UnityEditor.BSplines
             distance = closestDist;
         }
 
-        internal static void GetCurveSegments(BezierCurve curve, Vector3[] results)
+        internal static void GetCurveSegments(BSplineCurve curve, Vector3[] results)
         {
             float segmentPercentage = 1f / (results.Length - 1);
             for (int i = 0; i < k_SegmentsPointCount; ++i)

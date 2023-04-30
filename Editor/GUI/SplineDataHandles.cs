@@ -126,7 +126,7 @@ namespace UnityEditor.BSplines
                     {
                         var ray = HandleUtility.GUIPointToWorldRay(evt.mousePosition);
                         SplineUtility.GetNearestPoint(spline, ray, out var pos, out var t);
-                        var upDir = spline.EvaluateUpVector(t);
+                        var upDir = Vector3.up;
                         Handles.CircleHandleCap(controlID, pos, Quaternion.LookRotation(upDir), 0.15f * HandleUtility.GetHandleSize(pos), EventType.Repaint);
                     }
                     break;

@@ -18,9 +18,7 @@ namespace UnityEditor.BSplines
         readonly VisualElement m_SplineDrawerRoot;
 
         IElementDrawer m_ElementDrawer;
-        readonly CommonElementDrawer m_CommonElementDrawer = new CommonElementDrawer();
         readonly BezierKnotDrawer m_BezierKnotDrawer = new BezierKnotDrawer();
-        readonly TangentDrawer m_TangentDrawer = new TangentDrawer();
 
         static StyleSheet s_CommonStyleSheet;
         static StyleSheet s_ThemeStyleSheet;
@@ -83,15 +81,10 @@ namespace UnityEditor.BSplines
         void UpdateDrawerForElements(IReadOnlyList<SplineInfo> selectedSplines)
         {
             bool hasKnot = SplineSelection.HasAny<SelectableKnot>(selectedSplines);
-            bool hasTangent = SplineSelection.HasAny<SelectableTangent>(selectedSplines);
 
             IElementDrawer targetDrawer;
-            if (hasKnot && hasTangent)
-                targetDrawer = m_CommonElementDrawer; 
-            else if (hasKnot)
+            if (hasKnot)
                 targetDrawer = m_BezierKnotDrawer;
-            else if (hasTangent)
-                targetDrawer = m_TangentDrawer;
             else
                 targetDrawer = null;
 

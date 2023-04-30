@@ -128,24 +128,11 @@ namespace UnityEditor.BSplines
             if (guiChanged && m_Spline != null)
             {
                 serializedObject.ApplyModifiedProperties();
-                m_Spline.EnforceTangentModeNoNotify(m_Spline.PreviousIndex(i));
-                m_Spline.EnforceTangentModeNoNotify(i);
-                m_Spline.EnforceTangentModeNoNotify(m_Spline.NextIndex(i));
                 m_Spline.SetDirty(SplineModification.KnotModified, i);
 
                 // delay repaint because SplineCacheUtility is only clearing it's cache on Spline.afterSplineWasModified
                 EditorApplication.delayCall += SceneView.RepaintAll;
             }
-        }
-
-        static void EnforceTangentModeWithNeighbors(Spline spline, int index)
-        {
-            if (spline == null)
-                return;
-            int p = spline.PreviousIndex(index), n = spline.NextIndex(index);
-            spline.EnforceTangentModeNoNotify(index);
-            if(p != index) spline.EnforceTangentModeNoNotify(p);
-            if(n != index) spline.EnforceTangentModeNoNotify(n);
         }
 
         void OnReorder(ReorderableList reorderableList, int srcIndex, int dstIndex)
@@ -159,8 +146,6 @@ namespace UnityEditor.BSplines
                 serializedObject.Update();
             }
 
-            EnforceTangentModeWithNeighbors(m_Spline, srcIndex);
-            EnforceTangentModeWithNeighbors(m_Spline, dstIndex);
             m_Spline?.SetDirty(SplineModification.KnotReordered, dstIndex);
         }
 
@@ -218,17 +203,13 @@ namespace UnityEditor.BSplines
                     {
                         EditorSplineUtility.AddKnotToTheEnd(
                             info,
-                            knot.Position + 3f * knot.TangentOut.Direction,
-                            math.rotate(knot.LocalToWorld, math.up()),
-                            knot.TangentOut.Direction);
+                            knot.Position + 3f * math.float3(Vector3.forward));
                     }
                     else
                     {
                         EditorSplineUtility.AddKnotToTheEnd(
                             info,
-                            info.Transform.position,
-                            math.up(),
-                            math.forward());
+                            info.Transform.position);
                     }
 
                     index = count;
@@ -285,7 +266,7 @@ namespace UnityEditor.BSplines
                 return;
 
             foreach (var i in SplineSelection.selection
-                .Where(x => ReferenceEquals(x.target, m_Container) && x.targetIndex == m_ContainerIndex && x.tangentIndex < 0)
+                .Where(x => ReferenceEquals(x.target, m_Container) && x.targetIndex == m_ContainerIndex)
                 .Select(y => y.knotIndex))
                 Select(i, true);
         }

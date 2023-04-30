@@ -51,35 +51,5 @@ namespace UnityEditor.BSplines
             }
             Gizmos.matrix = Matrix4x4.identity;
         }
-
-        /// <summary>
-        /// Draw a line gizmo for a <see cref="ISplineProvider"/>.
-        /// </summary>
-        /// <param name="provider">An object implementing the ISplineProvider interface. Usually this will be a MonoBehaviour.</param>
-        [Obsolete("Use the overload that uses " + nameof(ISplineContainer))]
-        public static void DrawGizmos(ISplineProvider provider)
-        {
-            var splines = provider.Splines;
-            if (splines == null)
-                return;
-
-            Gizmos.matrix = ((MonoBehaviour)provider).transform.localToWorldMatrix;
-            foreach (var spline in splines)
-            {
-                if (spline == null || spline.Count < 2)
-                    continue;
-
-                Vector3[] positions;
-                SplineCacheUtility.GetCachedPositions(spline, out positions);
-
-#if UNITY_2023_1_OR_NEWER
-                Gizmos.DrawLineStrip(positions, false);
-#else
-                for (int i = 1; i < positions.Length; ++i)
-                    Gizmos.DrawLine(positions[i-1], positions[i]);
-#endif
-            }
-            Gizmos.matrix = Matrix4x4.identity;
-        }
     }
 }

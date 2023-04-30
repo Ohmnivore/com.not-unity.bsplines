@@ -43,7 +43,6 @@ namespace UnityEditor.BSplines
                 if(EditorGUI.EndChangeCheck())
                 {
                     EditorSplineUtility.RecordSelection($"Rotate Spline Elements ({SplineSelection.Count})");
-                    TransformOperation.ApplyRotation(rotation * Quaternion.Inverse(m_CurrentRotation), m_RotationCenter);
                     m_CurrentRotation = rotation;
                 }
 

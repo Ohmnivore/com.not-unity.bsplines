@@ -21,7 +21,6 @@ namespace UnityEditor.BSplines
         // Tracks selected splines in the SplineReorderableList
         static List<SplineInfo> s_SelectedSplines = new ();
         public static int Count => selection.Count;
-        static HashSet<SelectableTangent> s_AdjacentTangentCache = new HashSet<SelectableTangent>();
 
         static int s_SelectionVersion;
 
@@ -112,19 +111,6 @@ namespace UnityEditor.BSplines
             {
                 if (element.targetIndex == splineInfo.Index)
                 {
-                    if (element.tangentIndex >= 0)
-                    {
-                        var tangent = new SelectableTangent(splineInfo, element.knotIndex, element.tangentIndex);
-                        if (tangent.IsValid() && tangent is T t)
-                        {
-                            value = t;
-                            return true;
-                        }
-
-                        value = default;
-                        return false;
-                    }
-
                     var knot = new SelectableKnot(splineInfo, element.knotIndex);
                     if (knot.IsValid() && knot is T k)
                     {
@@ -164,11 +150,9 @@ namespace UnityEditor.BSplines
         static bool IsEqual<T>(T element, SelectableSplineElement selectionData)
             where T : ISplineElement
         {
-            int tangentIndex = element is SelectableTangent tangent ? tangent.TangentIndex : -1;
             return element.SplineInfo.Object == selectionData.target
                    && element.SplineInfo.Index == selectionData.targetIndex
-                   && element.KnotIndex == selectionData.knotIndex
-                   && tangentIndex == selectionData.tangentIndex;
+                   && element.KnotIndex == selectionData.knotIndex;
         }
 
         public static void SetActive<T>(T element)
@@ -333,13 +317,6 @@ namespace UnityEditor.BSplines
                     ClearInspectorSelectedSplines();
                     removeElement = true;
                 }
-                else if(selection[i].tangentIndex > 0)
-                {
-                    // In the case of a tangent, also check that the tangent is still valid if the spline type
-                    // or tangent mode has been updated
-                    var spline = SplineToolContext.GetSpline(selection[i].target, selection[i].targetIndex);
-                    removeElement = !SplineUtility.AreTangentsModifiable(spline.GetTangentMode(selection[i].knotIndex));
-                }
 
                 if (removeElement)
                 {
@@ -356,7 +333,6 @@ namespace UnityEditor.BSplines
 
             if (changed)
             {
-                RebuildAdjacentCache();
                 NotifySelectionChanged();
             }
         }
@@ -376,7 +352,6 @@ namespace UnityEditor.BSplines
                     selection[i] = knot;
                 }
             }
-            RebuildAdjacentCache();
         }
 
         //Used when deleting an element in spline
@@ -404,7 +379,6 @@ namespace UnityEditor.BSplines
                     }
                 }
             }
-            RebuildAdjacentCache();
 
             if (changed)
                 NotifySelectionChanged();
@@ -420,7 +394,6 @@ namespace UnityEditor.BSplines
 
         static void NotifySelectionChanged()
         {
-            RebuildAdjacentCache();
             changed?.Invoke();
         }
 
@@ -437,21 +410,9 @@ namespace UnityEditor.BSplines
             return false;
         }
 
-        static bool TryCast(SelectableSplineElement element, out SelectableTangent result)
-        {
-            if (TryGetSplineInfo(element, out var splineInfo) && element.tangentIndex >= 0)
-            {
-                result = new SelectableTangent(splineInfo, element.knotIndex, element.tangentIndex);
-                return true;
-            }
-
-            result = default;
-            return false;
-        }
-
         static bool TryCast(SelectableSplineElement element, out SelectableKnot result)
         {
-            if (TryGetSplineInfo(element, out var splineInfo) && element.tangentIndex < 0)
+            if (TryGetSplineInfo(element, out var splineInfo))
             {
                 result = new SelectableKnot(splineInfo, element.knotIndex);
                 return true;
@@ -459,32 +420,6 @@ namespace UnityEditor.BSplines
 
             result = default;
             return false;
-        }
-
-        internal static bool IsSelectedOrAdjacentToSelected(SelectableTangent tangent)
-        {
-            return s_AdjacentTangentCache.Contains(tangent);
-        }
-
-        static void RebuildAdjacentCache()
-        {
-            s_AdjacentTangentCache.Clear();
-
-            foreach(var element in selection)
-            {
-                SelectableTangent previousOut, currentIn, currentOut, nextIn;
-                if(TryCast(element, out SelectableKnot knot))
-                    EditorSplineUtility.GetAdjacentTangents(knot, out previousOut, out currentIn, out currentOut, out nextIn);
-                else if(TryCast(element, out SelectableTangent tangent))
-                    EditorSplineUtility.GetAdjacentTangents(tangent, out previousOut, out currentIn, out currentOut, out nextIn);
-                else
-                    continue;
-
-                s_AdjacentTangentCache.Add(previousOut);
-                s_AdjacentTangentCache.Add(currentIn);
-                s_AdjacentTangentCache.Add(currentOut);
-                s_AdjacentTangentCache.Add(nextIn);
-            }
         }
 
         internal static void ClearInspectorSelectedSplines()

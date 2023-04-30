@@ -1,6 +1,9 @@
+using Codice.Client.Common;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Mathematics;
+using UnityEngine.UIElements;
+using static UnityEngine.GraphicsBuffer;
 
 namespace UnityEngine.BSplines
 {
@@ -25,16 +28,23 @@ namespace UnityEngine.BSplines
         /// <param name="curve">A cubic Bezier curve.</param>
         /// <param name="t">A value between 0 and 1 representing the ratio along the curve.</param>
         /// <returns>A position on the curve.</returns>
-        public static float3 EvaluatePosition(BezierCurve curve,  float t)
+        public static float3 EvaluatePosition(BSplineCurve curve,  float t)
         {
-            t = math.clamp(t, 0, 1);
-            var t2 = t * t;
-            var t3 = t2 * t;
-            var position =
-                curve.P0 * ( -1f * t3 + 3f * t2 - 3f * t + 1f ) +
-                curve.P1 * (  3f * t3 - 6f * t2 + 3f * t) +
-                curve.P2 * ( -3f * t3 + 3f * t2) +
-                curve.P3 * (       t3 );
+            float t1 = math.clamp(t, 0, 1);
+            float t2 = t1 * t1;
+            float t3 = t2 * t1;
+
+            var p0 = curve.P0;
+            var p1 = curve.P1;
+            var p2 = curve.P2;
+            var p3 = curve.P3;
+
+            var c0 = p0 + 4f * p1 + p2;
+            var c1 = -3f * p0 + 3f * p2;
+            var c2 = 3f * p0 - 6f * p1 + 3f * p2;
+            var c3 = -p0 + 3f * p1 - 3f * p2 + p3;
+
+            var position = (c0 + c1 * t1 + c2 * t2 + c3 * t3) / 6f;
 
             return position;
         }
@@ -45,16 +55,21 @@ namespace UnityEngine.BSplines
         /// <param name="curve">A cubic Bezier curve.</param>
         /// <param name="t">A value between 0 and 1 representing the ratio along the curve.</param>
         /// <returns>A tangent on the curve.</returns>
-        public static float3 EvaluateTangent(BezierCurve curve, float t)
+        public static float3 EvaluateTangent(BSplineCurve curve, float t)
         {
-            t = math.clamp(t, 0, 1);
-            float t2 = t * t;
+            float t1 = math.clamp(t, 0, 1);
+            float t2 = t1 * t1;
 
-            var tangent =
-                curve.P0 * ( -3f * t2 +  6f * t - 3f ) +
-                curve.P1 * (  9f * t2 - 12f * t + 3f) +
-                curve.P2 * ( -9f * t2 +  6f * t ) +
-                curve.P3 * (  3f * t2 );
+            var p0 = curve.P0;
+            var p1 = curve.P1;
+            var p2 = curve.P2;
+            var p3 = curve.P3;
+
+            var c1 = -3f * p0 + 3f * p2;
+            var c2 = 3f * p0 - 6f * p1 + 3f * p2;
+            var c3 = -p0 + 3f * p1 - 3f * p2 + p3;
+
+            var tangent = (c1 + c2 * 2f * t1 + c3 * 3f * t2) / 6f;
 
             return tangent;
         }
@@ -65,15 +80,19 @@ namespace UnityEngine.BSplines
         /// <param name="curve">A cubic Bezier curve.</param>
         /// <param name="t">A value between 0 and 1 representing the ratio along the curve.</param>
         /// <returns>An acceleration vector on the curve.</returns>
-        public static float3 EvaluateAcceleration(BezierCurve curve,  float t)
+        public static float3 EvaluateAcceleration(BSplineCurve curve,  float t)
         {
-            t = math.clamp(t, 0, 1);
+            float t1 = math.clamp(t, 0, 1);
 
-            var acceleration =
-                curve.P0 * ( -6f * t + 6f ) +
-                curve.P1 * ( 18f * t - 12f) +
-                curve.P2 * (-18f * t + 6f ) +
-                curve.P3 * (  6f * t );
+            var p0 = curve.P0;
+            var p1 = curve.P1;
+            var p2 = curve.P2;
+            var p3 = curve.P3;
+
+            var c2 = 3f * p0 - 6f * p1 + 3f * p2;
+            var c3 = -p0 + 3f * p1 - 3f * p2 + p3;
+
+            var acceleration = (c2 * 2f + c3 * 6f * t1) / 6f;
 
             return acceleration;
         }
@@ -84,7 +103,7 @@ namespace UnityEngine.BSplines
         /// <param name="curve">A cubic Bezier curve.</param>
         /// <param name="t">A value between 0 and 1 representing the ratio along the curve.</param>
         /// <returns>A curvature value on the curve.</returns>
-        public static float EvaluateCurvature(BezierCurve curve, float t)
+        public static float EvaluateCurvature(BSplineCurve curve, float t)
         {
             t = math.clamp(t, 0, 1);
 
@@ -102,53 +121,6 @@ namespace UnityEngine.BSplines
         }
 
         /// <summary>
-        /// Given a Bezier curve, return an interpolated position at ratio t.
-        /// </summary>
-        /// <param name="curve">A cubic Bezier curve.</param>
-        /// <param name="t">A value between 0 and 1 representing the ratio along the curve.</param>
-        /// <returns>A position on the curve.</returns>
-        static float3 DeCasteljau(BezierCurve curve, float t)
-        {
-            float3 p0 = curve.P0, p1 = curve.P1;
-            float3 p2 = curve.P2, p3 = curve.P3;
-
-            float3 a0 = math.lerp(p0, p1, t);
-            float3 a1 = math.lerp(p1, p2, t);
-            float3 a2 = math.lerp(p2, p3, t);
-            float3 b0 = math.lerp(a0, a1, t);
-            float3 b1 = math.lerp(a1, a2, t);
-
-            return math.lerp(b0, b1, t);
-        }
-
-        /// <summary>
-        /// Decompose a curve into two smaller curves matching the source curve.
-        /// </summary>
-        /// <param name="curve">The source curve.</param>
-        /// <param name="t">A mid-point on the source curve defining where the two smaller curves control points meet.</param>
-        /// <param name="left">A curve from the source curve first control point to the mid-point, matching the curvature of the source curve.</param>
-        /// <param name="right">A curve from the mid-point to the source curve fourth control point, matching the curvature of the source curve.</param>
-        public static void Split(BezierCurve curve, float t, out BezierCurve left, out BezierCurve right)
-        {
-            t = math.clamp(t, 0f, 1f);
-
-            // subdivide control points, first iteration
-            float3 split0 = math.lerp(curve.P0, curve.P1, t);
-            float3 split1 = math.lerp(curve.P1, curve.P2, t);
-            float3 split2 = math.lerp(curve.P2, curve.P3, t);
-
-            // subdivide control points, second iteration
-            float3 split3 = math.lerp(split0, split1, t);
-            float3 split4 = math.lerp(split1, split2, t);
-
-            // subdivide control points, third iteration
-            float3 split5 = math.lerp(split3, split4, t);
-
-            left = new BezierCurve(curve.P0, split0, split3, split5);
-            right = new BezierCurve(split5, split4, split2, curve.P3);
-        }
-
-        /// <summary>
         /// Calculate the length of a <see cref="BezierCurve"/> by unrolling the curve into linear segments and summing
         /// the lengths of the lines. This is equivalent to accessing <see cref="Spline.GetCurveLength"/>.
         /// </summary>
@@ -156,7 +128,7 @@ namespace UnityEngine.BSplines
         /// <param name="resolution">The number of linear segments used to calculate the curve length.</param>
         /// <returns>The sum length of a collection of linear segments fitting this curve.</returns>
         /// <seealso cref="ApproximateLength(BezierCurve)"/>
-        public static float CalculateLength(BezierCurve curve, int resolution = 30)
+        public static float CalculateLength(BSplineCurve curve, int resolution = 30)
         {
             float magnitude = 0f;
             float3 prev = EvaluatePosition(curve, 0f);
@@ -178,7 +150,7 @@ namespace UnityEngine.BSplines
         /// </summary>
         /// <param name="curve">The <see cref="BezierCurve"/> to create a distance to 't' lookup table for.</param>
         /// <param name="lookupTable">A pre-allocated array to populate with distance to interpolation ratio data.</param>
-        public static void CalculateCurveLengths(BezierCurve curve, DistanceToInterpolation[] lookupTable)
+        public static void CalculateCurveLengths(BSplineCurve curve, DistanceToInterpolation[] lookupTable)
         {
             var resolution = lookupTable.Length;
 
@@ -207,134 +179,6 @@ namespace UnityEngine.BSplines
             // Reusing Mathf.Approximately code
             return math.abs(b - a) < math.max(0.000001f * math.max(math.abs(a), math.abs(b)), k_Epsilon * 8);
         }
-        
-        /// <summary>
-        /// Calculate the approximate length of a <see cref="BezierCurve"/>. This is less accurate than
-        /// <seealso cref="CalculateLength"/>, but can be significantly faster. Use this when accuracy is
-        /// not paramount and the curve control points are changing frequently.
-        /// </summary>
-        /// <param name="curve">The <see cref="BezierCurve"/> to calculate length.</param>
-        /// <returns>An estimate of the length of a curve.</returns>
-        public static float ApproximateLength(BezierCurve curve)
-        {
-            float chord = math.length(curve.P3 - curve.P0);
-            float net = math.length(curve.P0 - curve.P1) + math.length(curve.P2 - curve.P1) + math.length(curve.P3 - curve.P2);
-            return (net + chord) / 2;
-        }
-
-        internal static float3 EvaluateUpVector(BezierCurve curve, float t, float3 startUp, float3 endUp)
-        {
-            // Ensure we have workable tangents by linearizing ones that are of zero length
-            var linearTangentLen = math.length(SplineUtility.GetExplicitLinearTangent(curve.P0, curve.P3));
-            var linearTangentOut = math.normalize(curve.P3 - curve.P0) * linearTangentLen;
-            if (Approximately(math.length(curve.P1 - curve.P0), 0f)) 
-                curve.P1 = curve.P0 + linearTangentOut;
-            if (Approximately(math.length(curve.P2 - curve.P3), 0f))
-                curve.P2 = curve.P3 - linearTangentOut;
-
-            var normalBuffer = new NativeArray<float3>(k_NormalsPerCurve, Allocator.Temp);
-            
-            // Construct initial frenet frame
-            FrenetFrame frame;
-            frame.origin = curve.P0;
-            frame.tangent = curve.P1 - curve.P0;
-            frame.normal = startUp;
-            frame.binormal = math.normalize(math.cross(frame.tangent, frame.normal));
-            normalBuffer[0] = frame.normal;
-            
-            // Continue building remaining rotation minimizing frames
-            var stepSize = 1f / (k_NormalsPerCurve - 1);
-            var currentT = stepSize;
-            var prevT = 0f;
-            var upVector = float3.zero;
-            FrenetFrame prevFrame;
-            for (int i = 1; i < k_NormalsPerCurve; ++i)
-            {
-                prevFrame = frame;
-                frame = GetNextRotationMinimizingFrame(curve, prevFrame, currentT);
-                normalBuffer[i] = frame.normal;
-
-                if (prevT <= t && currentT >= t)
-                {
-                    var lerpT = (t - prevT) / stepSize;
-                    upVector = Vector3.Slerp(prevFrame.normal, frame.normal, lerpT);
-                }
-
-                prevT = currentT;
-                currentT += stepSize;
-            }
-
-            if (prevT <= t && currentT >= t)
-                upVector = endUp;
-
-            var lastFrameNormal = normalBuffer[k_NormalsPerCurve - 1];
-
-            var angleBetweenNormals = math.acos(math.clamp(math.dot(lastFrameNormal, endUp), -1f, 1f));
-            if (angleBetweenNormals == 0f)
-                return upVector;
-
-            // Since there's an angle difference between the end knot's normal and the last evaluated frenet frame's normal,
-            // the remaining code gradually applies the angle delta across the evaluated frames' normals.
-            var lastNormalTangent = math.normalize(frame.tangent);
-            var positiveRotation = quaternion.AxisAngle(lastNormalTangent, angleBetweenNormals);
-            var negativeRotation = quaternion.AxisAngle(lastNormalTangent, -angleBetweenNormals);
-            var positiveRotationResult = math.acos(math.clamp(math.dot(math.rotate(positiveRotation, endUp), lastFrameNormal), -1f, 1f));
-            var negativeRotationResult = math.acos(math.clamp(math.dot(math.rotate(negativeRotation, endUp), lastFrameNormal), -1f, 1f));
-
-            if (positiveRotationResult > negativeRotationResult)
-                angleBetweenNormals *= -1f;
-
-            currentT = stepSize;
-            prevT = 0f;
-            for (int i = 1; i < normalBuffer.Length; i++)
-            {
-                var normal = normalBuffer[i];
-                var adjustmentAngle = math.lerp(0f, angleBetweenNormals, currentT);
-                var tangent = math.normalize(EvaluateTangent(curve, currentT));
-                var adjustedNormal = math.rotate(quaternion.AxisAngle(tangent, -adjustmentAngle), normal);
-
-                normalBuffer[i] = adjustedNormal;
-
-                // Early exit if we've already adjusted the normals at offsets that curveT is in between
-                if (prevT <= t && currentT >= t)
-                {
-                    var lerpT = (t - prevT) / stepSize;
-                    upVector = Vector3.Slerp(normalBuffer[i - 1], normalBuffer[i], lerpT);
-
-                    return upVector;
-                }
-
-                prevT = currentT;
-                currentT += stepSize;
-            }
-
-            return endUp;
-        }
-
-        static FrenetFrame GetNextRotationMinimizingFrame(BezierCurve curve, FrenetFrame previousRMFrame, float nextRMFrameT)
-        {
-            FrenetFrame nextRMFrame;
-
-            // Evaluate position and tangent for next RM frame
-            nextRMFrame.origin = EvaluatePosition(curve, nextRMFrameT);
-            nextRMFrame.tangent = EvaluateTangent(curve, nextRMFrameT);
-
-            // Mirror the rotational axis and tangent
-            float3 toCurrentFrame = nextRMFrame.origin - previousRMFrame.origin;
-            float c1 = math.dot(toCurrentFrame, toCurrentFrame);
-            float3 riL = previousRMFrame.binormal - toCurrentFrame * 2f / c1 * math.dot(toCurrentFrame, previousRMFrame.binormal);
-            float3 tiL = previousRMFrame.tangent - toCurrentFrame * 2f / c1 * math.dot(toCurrentFrame, previousRMFrame.tangent);
-
-            // Compute a more stable binormal
-            float3 v2 = nextRMFrame.tangent - tiL;
-            float c2 = math.dot(v2, v2);
-
-            // Fix binormal's axis
-            nextRMFrame.binormal = math.normalize(riL - v2 * 2f / c2 * math.dot(v2, riL));
-            nextRMFrame.normal = math.normalize(math.cross(nextRMFrame.binormal, nextRMFrame.tangent));
-
-            return nextRMFrame;
-        }
 
         static readonly DistanceToInterpolation[] k_DistanceLUT = new DistanceToInterpolation[24];
 
@@ -349,7 +193,7 @@ namespace UnityEngine.BSplines
         /// <param name="curve">The <see cref="BezierCurve"/> to calculate the distance to interpolation ratio for.</param>
         /// <param name="distance">The curve-relative distance to convert to an interpolation ratio (also referred to as 't').</param>
         /// <returns> Returns the normalized interpolation ratio associated to distance on the designated curve.</returns>
-        public static float GetDistanceToInterpolation(BezierCurve curve, float distance)
+        public static float GetDistanceToInterpolation(BSplineCurve curve, float distance)
         {
             CalculateCurveLengths(curve, k_DistanceLUT);
             return GetDistanceToInterpolation(k_DistanceLUT, distance);
@@ -398,7 +242,7 @@ namespace UnityEngine.BSplines
         /// <param name="resolution">The number of line segments on this curve that are rasterized when testing
         /// for the nearest point. A higher value is more accurate, but slower to calculate.</param>
         /// <returns>Returns the nearest position on the curve to a ray.</returns>
-        public static float3 GetNearestPoint(BezierCurve curve, Ray ray, int resolution = 16)
+        public static float3 GetNearestPoint(BSplineCurve curve, Ray ray, int resolution = 16)
         {
             GetNearestPoint(curve, ray, out var position, out _, resolution);
             return position;
@@ -414,7 +258,7 @@ namespace UnityEngine.BSplines
         /// <param name="resolution">The number of line segments that this curve will be rasterized to when testing
         /// for nearest point. A higher value will be more accurate, but slower to calculate.</param>
         /// <returns>The distance from ray to nearest point on a <see cref="BezierCurve"/>.</returns>
-        public static float GetNearestPoint(BezierCurve curve, Ray ray, out float3 position, out float interpolation, int resolution = 16)
+        public static float GetNearestPoint(BSplineCurve curve, Ray ray, out float3 position, out float interpolation, int resolution = 16)
         {
             float bestDistSqr = float.PositiveInfinity;
             float bestLineParam = 0f;

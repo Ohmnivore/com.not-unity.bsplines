@@ -24,7 +24,7 @@ namespace UnityEditor.BSplines
     {
         readonly SelectableKnot m_Target;
 
-        public KnotPlacementData(Vector3 mouse, SelectableKnot target) : base(mouse, target.Position, math.mul(target.Rotation, math.up()))
+        public KnotPlacementData(Vector3 mouse, SelectableKnot target) : base(mouse, target.Position, Vector3.up)
         {
             m_Target = target;
         }
