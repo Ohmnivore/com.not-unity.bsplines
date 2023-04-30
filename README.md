@@ -13,11 +13,12 @@ Only B-Splines are supported in this package. Support of all other types has bee
 * It does not depend on the `com.unity.splines` package and will not conflict with it if it's present
 
 # Beyond B-Splines
-B-Spline's are non-interpolating which makes the authoring of normals and links fairly challenging (see "Spline Normals" and "Spline Links" sections). Even position is difficult to author although this is a generally accepted trade-off. The clamping of open splines is also more complicated, requiring point mirroring instead of duplication.
+B-Splines are non-interpolating which makes the authoring of normals and links fairly challenging (see "Spline Normals" and "Spline Links" sections). Even position is difficult to author although this is a generally accepted trade-off. The clamping of open splines is also more complicated, requiring point mirroring instead of duplication.
 
 These problems combined make this fork a failed experiment for many (but not all) use cases. We are hitting the limit of what's possible with B-splines.
 
 Taking a step back then, an ideal spline for us should have the following properties:
+
 * C^2 continuity
 * Interpolating
 * Local support (~4 points)
@@ -44,11 +45,12 @@ For open splines, the control points are mirrored to ensure that the spline pass
 
 Derivatives are analytical and need only be applied to the parameter vector `[1, t, t^2, t^3]`. This vector becomes `[0, 1, 2t, 3t^2]` for the tangent and `[0, 0, 2, 6t]` for the acceleration.
 
-The multiplication of the control point vector by the basis function matrix could maybe be cached for every `BSplineCurve`, and could be re-used for position and derivative computations.
+The multiplication of the control point vector by the basis function matrix could maybe be cached for every `BSplineCurve`, and  re-used for position and derivative computations. This is not done at the moment.
 
 ## Changes
 ### BezierKnot -> ControlPoint
 The `BezierKnot` has been replaced by the `ControlPoint`. Major differences are:
+
 * No more concept of tangents or rotation
 * The spline doesn't necessarily pass through every control point
 
