@@ -1,9 +1,11 @@
 # About
+![](screenshot.png)
+
 Based on [`com.unity.splines`](https://docs.unity3d.com/Packages/com.unity.splines@2.2/manual/index.html) version 2.2.1.
 
 The original package provides linear, cubic Bézier, and Catmull-Rom splines. They are not [C^2-continuous](https://www.youtube.com/watch?v=jvPPXbo87ds).
 
-This fork provides uniform cubic B-Splines.
+This fork provides uniform cubic B-Splines (`bsplines` branch).
 
 ## Note
 Only B-Splines are supported in this package. Support of all other types has been removed for simplicity, although this package can be installed side by side with the original.
@@ -13,7 +15,7 @@ Only B-Splines are supported in this package. Support of all other types has bee
 * It does not depend on the `com.unity.splines` package and will not conflict with it if it's present
 
 # Beyond B-Splines
-B-Splines are non-interpolating which makes the authoring of normals and links fairly challenging (see "Spline Normals" and "Spline Links" sections). Even position is difficult to author although this is a generally accepted trade-off. The clamping of open splines is also more complicated, requiring point mirroring instead of duplication.
+B-Splines are non-interpolating which makes the authoring of normals and links fairly challenging (see "Spline Normals" and "Spline Links" sections).
 
 These problems combined make this fork a failed experiment for many (but not all) use cases. We are hitting the limit of what's possible with B-splines.
 
@@ -27,10 +29,10 @@ Taking a step back then, an ideal spline for us should have the following proper
 * Good to have: Supports perfectly circular segments
 * Good to have: Doesn't introduce any self-intersections
 
-[Cem Yuksel's class of C^2 interpolating splines](http://www.cemyuksel.com/research/interpolating_splines/a_class_of_c2_interpolating_splines.pdf) seem like an excellent candidate.
+[Cem Yuksel's class of C^2 interpolating splines](http://www.cemyuksel.com/research/interpolating_splines/a_class_of_c2_interpolating_splines.pdf) seem like an excellent candidate. Another experiment for another day.
 
 # Possible Improvements
-* Reimplement using Yuksel splines
+* Reimplement with Yuksel splines
 * Curve interpolation (global or local with higher degree B-Splines)
 * Arbitrary B-Spline degree
 * Twist angles/vectors for normals along the spline (see "Spline Normals")
@@ -67,13 +69,5 @@ The new `Spline.GetCurveControlPointsForIndex`, `Spline.GetCurveForControlPoint`
 # Spline Normals
 Due to time constraints and no obvious solution, spline normals have not been implemented at all.
 
-It could be possible to add twist angle handles at the control points. Or at points on the spline itself for more precise control.
-
-The `com.unity.splines` spline normal is a combination of RMF and SLERP, I'm not sure what is the resulting continuity. For B-Splines it would perhaps be natural to aim for C^2 continuity in the normals to match the tangents.
-
 # Spline Links
 Linking the endpoints of open splines together works as expected. In any other combination the splines might not meet, since control points usually wouldn't be located on the splines.
-
-One solution could be to link control points to a progress parameter of another spline. A downside is that the link point would be moved by any changes to its 4 neighboring control points.
-
-Another solution could be global/local curve interpolation, which can guarantee common points between different splines that won't be displaced by control points. Global interpolation loses locality, while local interpolation requires a degree higher than cubic. So neither are an ideal solution.

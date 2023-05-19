@@ -3,7 +3,7 @@
   "displayName": "B-Splines",
   "version": "2.2.1",
   "unity": "2021.3",
-  "description": "Work with curves and paths. Use the Splines package to generate objects and behaviors along paths, create trajectories, and draw shapes.",
+  "description": "This is a fork of com.unity.splines that provides B-splines.",
   "dependencies": {
     "com.unity.settings-manager": "1.0.3",
     "com.unity.mathematics": "1.2.1",
