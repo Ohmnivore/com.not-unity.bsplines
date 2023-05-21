@@ -7,7 +7,7 @@ The original package provides linear, cubic Bézier, and Catmull-Rom splines. Th
 
 This fork provides uniform cubic B-Splines (`bsplines` branch).
 
-See also [`com.not-unity.yuksel-splines`](https://github.com/Ohmnivore/com.not-unity.bsplines) for another C^2 option.
+See also [`com.not-unity.yuksel-splines`](https://github.com/Ohmnivore/com.not-unity.yuksel-splines) for another C^2 option.
 
 ## Note
 Only B-Splines are supported in this package. Support of all other types has been removed for simplicity, although this package can be installed side by side with the original.
@@ -31,7 +31,7 @@ Taking a step back then, an ideal spline for us should have the following proper
 * Good to have: Supports perfectly circular segments
 * Good to have: Doesn't introduce any self-intersections
 
-[Cem Yuksel's class of C^2 interpolating splines](http://www.cemyuksel.com/research/interpolating_splines/a_class_of_c2_interpolating_splines.pdf) seem like an excellent candidate: https://github.com/Ohmnivore/com.not-unity.bsplines.
+[Cem Yuksel's class of C^2 interpolating splines](http://www.cemyuksel.com/research/interpolating_splines/a_class_of_c2_interpolating_splines.pdf) seem like an excellent candidate: https://github.com/Ohmnivore/com.not-unity.yuksel-splines.
 
 # Possible Improvements
 * Reimplement with Yuksel splines
